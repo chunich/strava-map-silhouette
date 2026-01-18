@@ -1,7 +1,7 @@
 {
   "name": "strava-map-silhouette",
   "version": "1.0.0",
-  "description": "Strave GPX > Silhouette Images",
+  "description": "Strava GPX > Silhouette Images",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
