@@ -1,0 +1,120 @@
+const fs = require("fs").promises;
+const path = require("path");
+const { parseGPX } = require("./gpxParser");
+const { activityToGeoJSON } = require("./geoJsonConverter");
+const { tracksToSVG } = require("./tracksDrawer");
+
+/**
+ * Process GPX files and generate silhouette images
+ * @param {Array<string>} gpxFilePaths - Array of GPX file paths
+ * @param {string} outputDir - Output directory for silhouette images
+ * @param {Object} options - Processing options
+ */
+async function processGPXActivities(gpxFilePaths, outputDir, options = {}) {
+  const { filterType = "Running", verbose = false } = options;
+
+  await fs.mkdir(outputDir, { recursive: true });
+
+  const results = [];
+
+  for (const gpxFilePath of gpxFilePaths) {
+    try {
+      const logLine = `Processing [${gpxFilePaths.indexOf(gpxFilePath) + 1} of ${gpxFilePaths.length}]`;
+      if (verbose) {
+        console.log(logLine);
+      } else {
+        process.stdout.write(`${logLine}... `);
+      }
+
+      // Read GPX file
+      const gpxContent = await fs.readFile(gpxFilePath, "utf-8");
+      const activity = parseGPX(gpxContent);
+
+      // Filter by activity type (case insensitive)
+      if (activity.type.toLowerCase() !== options.filterType?.toLowerCase()) {
+        console.log(
+          `  Skipping: Activity type is "${activity.type}", not "${options.filterType}"`,
+        );
+        continue;
+      }
+
+      // Log VERBOSE activity info
+      if (verbose) {
+        console.log(`  ✓ Parsed GPX file: ${gpxFilePath}`);
+        console.log(`  File:        ${path.basename(gpxFilePath)}`);
+        console.log(`  Activity:    ${activity.name} (${activity.type})`);
+        console.log(`  Date:        ${activity.time}`);
+        console.log(`  Coordinates: ${activity.coordinates.length} points`);
+      }
+
+      // Convert to GeoJSON using @tmcw/togeojson
+      const geoJSON = activityToGeoJSON({ gpxContent });
+
+      // Save debug GeoJSON file
+      if (verbose) {
+        await fs.writeFile(
+          path.join(outputDir, "debug_geojson.json"),
+          JSON.stringify(geoJSON, null, 2),
+        );
+      }
+
+      // Convert GeoJSON coordinates to gridDrawer format
+      // Use the first LineString found in the GeoJSON output
+      let polyline = [];
+      if (geoJSON && geoJSON.features && geoJSON.features.length > 0) {
+        const line = geoJSON.features.find(
+          (f) => f.geometry && f.geometry.type === "LineString",
+        );
+        if (line) {
+          polyline = line.geometry.coordinates.map(([lng, lat]) => ({
+            lng,
+            lat,
+          }));
+        }
+      }
+
+      const tracks = [
+        {
+          polylines: [polyline],
+          special: false,
+        },
+      ];
+
+      // Save image
+      const baseName = path.basename(gpxFilePath, path.extname(gpxFilePath));
+      const dateStr = activity.time
+        ? new Date(activity.time).toISOString().slice(0, 10)
+        : "unknown_date";
+      const activityName = activity.name.replace(/\s+/g, "_");
+      const outputPath = path.join(
+        outputDir,
+        `${dateStr}_${activityName}_${baseName}.svg`,
+      );
+
+      // With default draw options
+      const svgString = tracksToSVG(tracks);
+      await fs.writeFile(outputPath, svgString);
+      console.log(`  ✓ Saved to: ${outputPath}`);
+
+      // Record success
+      results.push({
+        gpxFile: gpxFilePath,
+        activity: activity.name,
+        type: activity.type,
+        outputImage: outputPath,
+        success: true,
+      });
+    } catch (error) {
+      console.error(`  ✗ Error processing ${gpxFilePath}:`, error.message);
+      results.push({
+        gpxFile: gpxFilePath,
+        success: false,
+        error: error.message,
+      });
+    }
+  }
+
+  return results;
+}
+
+module.exports = { processGPXActivities };

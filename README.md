@@ -1,24 +1,37 @@
 # strava-map-silhouette
 
-Convert Strava GPX activities to route silhouette images using Mapbox.
+Convert Strava GPX activities to route silhouette SVG images.
 
 ## Overview
 
-This application processes GPX activity files (from Strava or other sources) and generates silhouette images of the routes. It converts GPX coordinates to GeoJSON format and uses the Mapbox Static Images API to render the route as a 500x500 pixel image, focusing on the shape of the route rather than map details.
+This application processes GPX activity files (from Strava or other sources) and generates silhouette images of the routes. It converts GPX coordinates to GeoJSON format and renders the route as a 500x500 pixel SVG image, focusing on the shape of the route rather than map details.
 
 ## Features
 
 - Parse GPX files and extract coordinate data
-- Convert coordinates to GeoJSON format (Mapbox-compatible)
+- Convert coordinates to GeoJSON format
 - Filter activities by type (e.g., "Run", "Ride")
-- Generate 500x500px silhouette images of routes using Mapbox API
+- Generate 500x500px silhouette images of routes as SVG
 - Batch process multiple GPX files
-- Automatic route fitting and bounding box calculation
+
+## Demo
+
+You can try the tool with the included example files:
+
+- Run:
+  ```bash
+  node index.js ./gpx
+  ```
+- Ride:
+  ```bash
+  node index.js ./gpx --filterType=Ride
+  ```
+
+The output SVGs will appear in the `output/` directory.
 
 ## Prerequisites
 
 - Node.js (v14 or higher)
-- Mapbox access token (get one free at [mapbox.com](https://account.mapbox.com/access-tokens/))
 
 ## Installation
 
@@ -30,22 +43,22 @@ npm install
 
 ### Basic Usage
 
-Set your Mapbox access token as an environment variable and provide GPX file paths:
+Provide GPX file path:
 
 ```bash
-MAPBOX_ACCESS_TOKEN=your_token_here node index.js examples/run_example.gpx
+node index.js examples/run_example.gpx
 ```
 
-### Process Multiple Files
+### With Debug ON
 
 ```bash
-MAPBOX_ACCESS_TOKEN=your_token_here node index.js examples/*.gpx
+node index.js ./gpx --debug
 ```
 
-### Using npm script
+### Using npm script with Debug ON
 
 ```bash
-MAPBOX_ACCESS_TOKEN=your_token_here npm start examples/run_example.gpx
+npm start -- ./gpx --debug
 ```
 
 ## How It Works
@@ -53,14 +66,15 @@ MAPBOX_ACCESS_TOKEN=your_token_here npm start examples/run_example.gpx
 1. **GPX Parsing**: Reads GPX files and extracts track coordinates and metadata
 2. **Type Filtering**: Filters activities by type (default: "Run")
 3. **GeoJSON Conversion**: Converts coordinates to GeoJSON LineString format
-4. **Route Generation**: Uses Mapbox Static Images API to generate route overlay
-5. **Image Export**: Saves the route as a 500x500px PNG image
+4. **SVG Generation**: Renders the route as a silhouette SVG image
+5. **Image Export**: Saves the route as a 500x500px SVG image
 
 ## Output
 
 Generated images are saved in the `./output` directory with the naming pattern:
+
 ```
-<original_filename>_silhouette.png
+<original_filename>_silhouette.svg
 ```
 
 ## Project Structure
@@ -71,7 +85,6 @@ strava-map-silhouette/
 ├── src/
 │   ├── gpxParser.js          # GPX file parser
 │   ├── geoJsonConverter.js   # GeoJSON conversion utilities
-│   └── mapboxClient.js       # Mapbox API integration
 ├── examples/
 │   ├── run_example.gpx       # Example run activity
 │   └── ride_example.gpx      # Example ride activity
@@ -80,14 +93,14 @@ strava-map-silhouette/
 
 ## API Reference
 
-### processGPXActivities(gpxFilePaths, outputDir, mapboxToken, options)
+### processGPXActivities(gpxFilePaths, outputDir, options)
 
 Main function to process GPX files and generate silhouettes.
 
 **Parameters:**
+
 - `gpxFilePaths` (Array<string>): Array of GPX file paths to process
 - `outputDir` (string): Output directory for generated images
-- `mapboxToken` (string): Mapbox access token
 - `options` (Object): Processing options
   - `filterType` (string): Activity type to filter (default: "Run")
   - `imageWidth` (number): Output image width (default: 500)
@@ -101,24 +114,20 @@ The application can be customized by modifying the options in `index.js`:
 
 - **filterType**: Change the activity type filter (e.g., "Run", "Ride", "Walk")
 - **imageWidth/Height**: Adjust output image dimensions
-- **strokeColor/Width**: Modify route appearance in `mapboxClient.js`
+  // ...existing code...
 
 ## Example GPX Files
 
 Two example GPX files are included in the `examples/` directory:
+
 - `run_example.gpx` - A run activity (will be processed)
 - `ride_example.gpx` - A ride activity (will be skipped by default filter)
 
 ## Troubleshooting
 
-### "MAPBOX_ACCESS_TOKEN environment variable is required"
-Make sure you've set the environment variable before running the command.
-
 ### "No track data found in GPX"
-Ensure your GPX file contains `<trk>` and `<trkpt>` elements with latitude/longitude data.
 
-### Rate Limiting
-Mapbox has rate limits on their API. If processing many files, consider adding delays between requests.
+Ensure your GPX file contains `<trk>` and `<trkpt>` elements with latitude/longitude data.
 
 ## License
 

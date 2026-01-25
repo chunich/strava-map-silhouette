@@ -1,31 +1,17 @@
-/**
- * Convert coordinates to GeoJSON format suitable for Mapbox
- * @param {Array<Array<number>>} coordinates - Array of [lon, lat] pairs
- * @param {Object} properties - Additional properties for the feature
- * @returns {Object} GeoJSON Feature object
- */
-function coordinatesToGeoJSON(coordinates, properties = {}) {
-  return {
-    type: 'Feature',
-    properties: properties,
-    geometry: {
-      type: 'LineString',
-      coordinates: coordinates
-    }
-  };
-}
+const togeojson = require("@tmcw/togeojson");
+const { DOMParser } = require("xmldom");
 
 /**
- * Convert activity data to GeoJSON
- * @param {Object} activity - Activity object with coordinates and metadata
- * @returns {Object} GeoJSON Feature object
+ * Convert activity data (with raw GPX XML) to GeoJSON using @tmcw/togeojson
+ * @param {Object} activity - Activity object with gpxContent (string)
+ * @returns {Object} GeoJSON FeatureCollection
  */
 function activityToGeoJSON(activity) {
-  return coordinatesToGeoJSON(activity.coordinates, {
-    name: activity.name,
-    type: activity.type,
-    time: activity.time
-  });
+  if (!activity.gpxContent) {
+    throw new Error("activity.gpxContent (raw GPX XML string) is required");
+  }
+  const dom = new DOMParser().parseFromString(activity.gpxContent);
+  return togeojson.gpx(dom);
 }
 
-module.exports = { coordinatesToGeoJSON, activityToGeoJSON };
+module.exports = { activityToGeoJSON };
