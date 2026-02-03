@@ -74,7 +74,7 @@ npm start -- ./gpx --debug
 Generated images are saved in the `./output` directory with the naming pattern:
 
 ```
-<original_filename>_silhouette.svg
+<date>_<activity_name>_<original_filename>.svg
 ```
 
 ## Project Structure

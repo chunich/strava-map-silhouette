@@ -67,22 +67,36 @@ function computeGrid(n, w, h) {
 }
 
 const DEFAULT_DRAW_OPTIONS = {
+  title: "",
   width: 500,
   height: 500,
   offsetX: 0,
   offsetY: 0,
-  colors: { track: "#b7d05b", special: "#e22" },
+  colors: { track: "#2ab6e8", special: "#e22" },
   strokeWidth: 5,
   aspectRatio: 1.2, // Y axis multiplier
 };
+
+// Defensive: ensure drawOptions always has required properties
+function normalizeDrawOptions(drawOptions = {}) {
+  return {
+    ...DEFAULT_DRAW_OPTIONS,
+    ...drawOptions,
+    colors: {
+      ...DEFAULT_DRAW_OPTIONS.colors,
+      ...(drawOptions.colors || {}),
+    },
+  };
+}
 
 /**
  * Main function: given tracks, makes SVG output string
  * Each track: { polylines: [[{lat, lng}, ...], ...], special: bool }
  */
 function tracksToSVG(tracks, drawOptions = DEFAULT_DRAW_OPTIONS) {
+  const opts = normalizeDrawOptions(drawOptions);
   const { width, height, offsetX, offsetY, colors, strokeWidth, aspectRatio } =
-    drawOptions;
+    opts;
 
   // Compute grid: each cell is square, grid fills as much as possible
   const [cellSize, [countX, countY]] = computeGrid(
@@ -101,6 +115,9 @@ function tracksToSVG(tracks, drawOptions = DEFAULT_DRAW_OPTIONS) {
   // Assemble SVG header
   let svgParts = [
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">`,
+    `<style>
+      text { font-family: Arial, sans-serif; }
+    </style>`,
   ];
 
   // Draw each track
@@ -172,6 +189,13 @@ function tracksToSVG(tracks, drawOptions = DEFAULT_DRAW_OPTIONS) {
       );
     }
   });
+
+  // Draw title to lower right corner if provided with Arial font and size 16px
+  if (drawOptions.title) {
+    svgParts.push(
+      `<text x="${width - 10}" y="${height - 10}" text-anchor="end" font-size="24" fill="#666">${drawOptions.title}</text>`,
+    );
+  }
 
   svgParts.push("</svg>");
   return svgParts.join("\n");

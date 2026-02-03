@@ -2,7 +2,7 @@ const fs = require("fs").promises;
 const path = require("path");
 const { parseGPX } = require("./gpxParser");
 const { activityToGeoJSON } = require("./geoJsonConverter");
-const { tracksToSVG } = require("./tracksDrawer");
+const { tracksToSVG, DEFAULT_DRAW_OPTIONS } = require("./tracksDrawer");
 
 /**
  * Process GPX files and generate silhouette images
@@ -91,8 +91,26 @@ async function processGPXActivities(gpxFilePaths, outputDir, options = {}) {
         `${dateStr}_${activityName}_${baseName}.svg`,
       );
 
+      // Combine activity name, date, and distance for title
+      // Format dateStr as "Month Day, Year"
+      let formattedDate = dateStr;
+      if (activity.time) {
+        const dateObj = new Date(activity.time);
+        formattedDate = dateObj.toLocaleDateString("en-US", {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        });
+      }
+      const titleLabel = `${formattedDate} · ${
+        activity?.distance ? `${activity.distance.toFixed(2)} mi` : ""
+      }`;
+
       // With default draw options
-      const svgString = tracksToSVG(tracks);
+      const svgString = tracksToSVG(tracks, {
+        ...DEFAULT_DRAW_OPTIONS,
+        title: titleLabel,
+      });
       await fs.writeFile(outputPath, svgString);
       console.log(`  ✓ Saved to: ${outputPath}`);
 
