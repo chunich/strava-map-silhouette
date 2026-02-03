@@ -68,9 +68,9 @@ npm start examples/run_example.gpx
 
 ## Example 4: Process Your Own GPX Files
 
-To process your own Strava GPX files:
+To process your own GPX files:
 
-1. Export your activities from Strava as GPX files
+1. Export your activities from Garmin/COROS/Strava as GPX files
 2. Place them in a directory (e.g., `my-activities/`)
 3. Run the processor:
 

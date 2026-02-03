@@ -1,6 +1,6 @@
 # strava-map-silhouette
 
-Convert Strava GPX activities to route silhouette SVG images.
+Convert GPX activities to route silhouette SVG images.
 
 ## Overview
 
