@@ -65,6 +65,7 @@ async function generateSingleGPXImage(gpxFilePath, options = {}) {
   // Generate SVG
   const svgString = tracksToSVG(tracks, {
     ...DEFAULT_DRAW_OPTIONS,
+    ...options, // Merge in any custom draw options passed
     title: titleLabel,
   });
 

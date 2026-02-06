@@ -93,10 +93,20 @@ function normalizeDrawOptions(drawOptions = {}) {
  * Main function: given tracks, makes SVG output string
  * Each track: { polylines: [[{lat, lng}, ...], ...], special: bool }
  */
-function tracksToSVG(tracks, drawOptions = DEFAULT_DRAW_OPTIONS) {
+function tracksToSVG(tracks, drawOptions = {}) {
   const opts = normalizeDrawOptions(drawOptions);
   const { width, height, offsetX, offsetY, colors, strokeWidth, aspectRatio } =
     opts;
+
+  console.log({
+    width,
+    height,
+    offsetX,
+    offsetY,
+    colors,
+    strokeWidth,
+    aspectRatio,
+  });
 
   // Compute grid: each cell is square, grid fills as much as possible
   const [cellSize, [countX, countY]] = computeGrid(
@@ -203,4 +213,4 @@ function tracksToSVG(tracks, drawOptions = DEFAULT_DRAW_OPTIONS) {
 
 // -- Example usage --
 // Define a track as: { polylines: [ [ {lat, lng}, ... ], ... ], special: true/false }
-module.exports = { tracksToSVG };
+module.exports = { tracksToSVG, DEFAULT_DRAW_OPTIONS };

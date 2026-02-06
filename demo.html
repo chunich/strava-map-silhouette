@@ -68,16 +68,18 @@
       }
       .image-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
         gap: 1rem;
         margin-top: 1rem;
       }
       .image-card {
-        border: 1px solid #ddd;
-        border-radius: 4px;
+        border-radius: 10px;
         padding: 1rem;
         background: white;
         text-align: center;
+        align-content: center;
+        aspect-ratio: 1;
+        box-shadow: #ccc 1px 1px 24px 0px;
       }
       .image-card img {
         max-width: 100%;
@@ -117,12 +119,10 @@
   <body>
     <div class="container">
       <h1>GPX to Map Silhouette API</h1>
-      <p>Generate silhouette images from GPX files</p>
-
-      <h2>Endpoints</h2>
 
       <div class="endpoint">
         <div class="endpoint-header">
+          <button class="button" onclick="getAllImages()">Refresh</button>
           <button class="button" onclick="generateAllImages()">
             Generate All Images
           </button>
@@ -132,13 +132,38 @@
       </div>
 
       <div class="endpoint">
-        <h3>Available GPX Files</h3>
         <div id="imageList">Loading...</div>
       </div>
     </div>
 
     <script>
       const API_BASE = "http://localhost:3000";
+
+      async function refresh() {
+        const images = await getAllImages();
+        console.log("Loaded images:", images);
+
+        // Convert image filenames to results format
+        const results = images.map((filename) => ({
+          success: true,
+          outputImage: filename,
+        }));
+
+        loadImageList({ results });
+      }
+
+      async function getAllImages() {
+        try {
+          const response = await fetch(`${API_BASE}/images`, {
+            method: "GET",
+          });
+          const data = await response.json();
+          return data.images;
+        } catch (error) {
+          console.error("Error fetching images:", error);
+          return [];
+        }
+      }
 
       async function generateAllImages() {
         const statusEl = document.getElementById("generateStatus");
@@ -153,28 +178,28 @@
 
           statusEl.className = "status success";
           statusEl.innerHTML = `
-                    <strong>Success!</strong><br>
+                    <strong>Success!</strong>
                     Generated ${data.summary.successful} of ${data.summary.total} images<br>
-                    <small>${data.summary.failed} failed</small>
+                    <small>${data.summary.failed > 0 ? `${data.summary.failed} failed` : ""}</small>
                 `;
 
           // Refresh the image list
-          loadImageList();
+          loadImageList(data);
         } catch (error) {
           statusEl.className = "status error";
           statusEl.innerHTML = `<strong>Error:</strong> ${error.message}`;
         }
       }
 
-      async function loadImageList() {
+      async function loadImageList(data) {
         const listEl = document.getElementById("imageList");
 
         try {
           // First generate to ensure we have images
-          const response = await fetch(`${API_BASE}/images/generate`, {
-            method: "POST",
-          });
-          const data = await response.json();
+          //   const response = await fetch(`${API_BASE}/images/generate`, {
+          //     method: "POST",
+          //   });
+          //   const data = await response.json();
 
           if (data.results.length === 0) {
             listEl.innerHTML = "<p>No SVG files found</p>";
@@ -200,8 +225,10 @@
         }
       }
 
-      // Load images on page load
-      loadImageList();
+      // Get images on page load
+      (async () => {
+        await refresh();
+      })();
     </script>
   </body>
 </html>

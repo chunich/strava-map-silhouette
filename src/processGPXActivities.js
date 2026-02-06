@@ -106,9 +106,23 @@ async function processGPXActivities(gpxFilePaths, outputDir, options = {}) {
         activity?.distance ? `${activity.distance.toFixed(2)} mi` : ""
       }`;
 
-      // With default draw options
+      // Randomly select track color for variety
+      const trackColorRoll = Math.random();
+      const randomColors = {
+        ...options.colors,
+        track:
+          trackColorRoll < 0.33
+            ? options.colors.track
+            : trackColorRoll < 0.66
+              ? options.colors.trackAlt
+              : options.colors.trackAlt2,
+      };
+
+      // With draw options from configuration
       const svgString = tracksToSVG(tracks, {
         ...DEFAULT_DRAW_OPTIONS,
+        ...options, // Merge in custom options from config
+        colors: randomColors,
         title: titleLabel,
       });
       await fs.writeFile(outputPath, svgString);

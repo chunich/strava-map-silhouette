@@ -1,25 +1,49 @@
 const express = require("express");
 const fs = require("fs").promises;
 const path = require("path");
+const config = require("./config");
 const { processGPXActivities } = require("./src/processGPXActivities");
 const { generateSingleGPXImage } = require("./src/generateSingleImage");
 
 const app = express();
-const PORT = process.env.PORT || 3000;
 
 // Serve static files (for demo.html and other assets)
 app.use(express.static(__dirname));
 
-// Configuration - can be overridden by environment variables
-const config = {
-  gpxDir: process.env.GPX_DIR || "./gpx",
-  outputDir: process.env.OUTPUT_DIR || "./output",
-  filterType: process.env.FILTER_TYPE || "Running",
-  imageWidth: parseInt(process.env.IMAGE_WIDTH || "500"),
-  imageHeight: parseInt(process.env.IMAGE_HEIGHT || "500"),
-};
-
 console.log("Server configuration:", config);
+
+/** GET /images
+ * List all generated SVG images in the output directory
+ */
+app.get("/images", async (req, res) => {
+  try {
+    console.log(`[GET /images] Requested`);
+
+    // Check if output directory exists
+    try {
+      await fs.access(config.paths.outputDir);
+    } catch (error) {
+      return res.status(400).json({
+        error: "Output directory not found",
+        path: config.paths.outputDir,
+      });
+    }
+
+    // Read all .svg files in the directory
+    const files = await fs.readdir(config.paths.outputDir);
+    const svgFiles = files.filter((f) => f.toLowerCase().endsWith(".svg"));
+
+    res.json({
+      images: svgFiles,
+    });
+  } catch (error) {
+    console.error("[GET /images] Error:", error);
+    res.status(500).json({
+      error: "Failed to list images",
+      message: error.message,
+    });
+  }
+});
 
 /**
  * POST /images/generate
@@ -28,29 +52,29 @@ console.log("Server configuration:", config);
 app.post("/images/generate", async (req, res) => {
   try {
     console.log(
-      `[POST /images/generate] Starting generation from ${config.gpxDir}`,
+      `[POST /images/generate] Starting generation from ${config.paths.gpxDir}`,
     );
 
     // Check if directory exists
     try {
-      await fs.access(config.gpxDir);
+      await fs.access(config.paths.gpxDir);
     } catch (error) {
       return res.status(400).json({
         error: "GPX directory not found",
-        path: config.gpxDir,
+        path: config.paths.gpxDir,
       });
     }
 
     // Read all .gpx files in the directory
-    const files = await fs.readdir(config.gpxDir);
+    const files = await fs.readdir(config.paths.gpxDir);
     const gpxFiles = files
       .filter((f) => f.toLowerCase().endsWith(".gpx"))
-      .map((f) => path.join(config.gpxDir, f));
+      .map((f) => path.join(config.paths.gpxDir, f));
 
     if (gpxFiles.length === 0) {
       return res.status(404).json({
         error: "No GPX files found",
-        directory: config.gpxDir,
+        directory: config.paths.gpxDir,
       });
     }
 
@@ -58,16 +82,20 @@ app.post("/images/generate", async (req, res) => {
 
     // Process activities
     const options = {
-      filterType: config.filterType,
-      imageWidth: config.imageWidth,
-      imageHeight: config.imageHeight,
-      colors: { track: "#b7d05b", special: "#e22" },
+      filterType: config.filter.type,
+      width: config.draw.width,
+      height: config.draw.height,
+      colors: config.draw.colors,
+      strokeWidth: config.draw.strokeWidth,
+      aspectRatio: config.draw.aspectRatio,
+      offsetX: config.draw.offsetX,
+      offsetY: config.draw.offsetY,
       verbose: false,
     };
 
     const results = await processGPXActivities(
       gpxFiles,
-      config.outputDir,
+      config.paths.outputDir,
       options,
     );
 
@@ -121,7 +149,7 @@ app.get("/images/:filename", async (req, res) => {
     }
 
     // Check if SVG file exists in output directory
-    const svgFilePath = path.join(config.outputDir, filename);
+    const svgFilePath = path.join(config.paths.outputDir, filename);
     try {
       await fs.access(svgFilePath);
     } catch (error) {
@@ -160,9 +188,9 @@ app.get("/health", (req, res) => {
   res.json({
     status: "ok",
     config: {
-      gpxDir: config.gpxDir,
-      outputDir: config.outputDir,
-      filterType: config.filterType,
+      gpxDir: config.paths.gpxDir,
+      outputDir: config.paths.outputDir,
+      filterType: config.filter.type,
     },
   });
 });
@@ -184,23 +212,29 @@ app.get("/", (req, res) => {
       "GET /demo.html": "Interactive demo page",
     },
     config: {
-      gpxDir: config.gpxDir,
-      outputDir: config.outputDir,
-      filterType: config.filterType,
+      gpxDir: config.paths.gpxDir,
+      outputDir: config.paths.outputDir,
+      filterType: config.filter.type,
+      draw: config.draw,
     },
   });
 });
 
 // Start server
-app.listen(PORT, () => {
-  console.log(`\n🚀 Server running on http://localhost:${PORT}`);
+app.listen(config.server.port, () => {
+  console.log(`\n🚀 Server running on http://localhost:${config.server.port}`);
   console.log(
-    `   POST http://localhost:${PORT}/images/generate - Generate all images`,
+    `   GET  http://localhost:${config.server.port}/images - List all images`,
   );
   console.log(
-    `   GET  http://localhost:${PORT}/images/<filename>.svg - Get specific image`,
+    `   GET  http://localhost:${config.server.port}/images/<filename>.svg - Get specific image`,
   );
-  console.log(`   GET  http://localhost:${PORT}/health - Health check\n`);
+  console.log(
+    `   GET  http://localhost:${config.server.port}/health - Health check`,
+  );
+  console.log(
+    `   POST http://localhost:${config.server.port}/images/generate - Generate all images`,
+  );
 });
 
 module.exports = app;
