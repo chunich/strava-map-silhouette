@@ -93,7 +93,7 @@ strava-map-silhouette/
 
 ## API Reference
 
-### processGPXActivities(gpxFilePaths, outputDir, options)
+### processFileActivities(gpxFilePaths, outputDir, options)
 
 Main function to process GPX files and generate silhouettes.
 

@@ -13,13 +13,13 @@ The server will start on `http://localhost:3000` (or the port specified in the `
 You can configure the server using environment variables:
 
 ```bash
-PORT=8080 GPX_DIR=./my-gpx-files npm run server
+PORT=8080 SOURCE_DIR=./my-files npm run server
 ```
 
 Available environment variables:
 
 - `PORT` - Server port (default: 3000)
-- `GPX_DIR` - Directory containing GPX files (default: ./gpx)
+- `SOURCE_DIR` - Directory containing GPX files (default: ./source)
 - `OUTPUT_DIR` - Directory for generated SVG files (default: ./output)
 - `FILTER_TYPE` - Activity type filter (default: Running)
 - `IMAGE_WIDTH` - Image width (default: 500)
@@ -53,7 +53,7 @@ curl http://localhost:3000/health
 {
   "status": "ok",
   "config": {
-    "gpxDir": "./gpx",
+    "gpxDir": "./source",
     "outputDir": "./output",
     "filterType": "Running"
   }
@@ -139,7 +139,7 @@ Open `http://localhost:3000/demo.html` in your browser for an interactive demo.
 
 ## Testing
 
-You can use the included GPX files in the `./gpx` directory for testing:
+You can use the included GPX/TCX files in the `./source` directory for testing:
 
 ```bash
 # Start the server

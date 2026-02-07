@@ -1,6 +1,6 @@
 const fs = require("fs").promises;
 const path = require("path");
-const { processGPXActivities } = require("./src/processGPXActivities");
+const { processFileActivities } = require("./src/processFileActivities");
 
 /**
  * Main entry point
@@ -18,26 +18,30 @@ async function main() {
   const inputPath = inputArgs[0];
   const verboseFlag = inputArgs.includes("--debug");
   console.log(`Verbose mode: ${verboseFlag}`, { inputArgs });
+
   const stat = await require("fs").promises.stat(inputPath);
   if (stat.isDirectory()) {
     // Read all .gpx files in the directory
     const files = await require("fs").promises.readdir(inputPath);
     gpxFiles = files
-      .filter((f) => f.toLowerCase().endsWith(".gpx"))
+      .filter(
+        (f) =>
+          f.toLowerCase().endsWith(".gpx") || f.toLowerCase().endsWith(".tcx"),
+      )
       .map((f) => require("path").join(inputPath, f));
     if (gpxFiles.length === 0) {
-      console.error(`No .gpx files found in directory: ${inputPath}`);
+      console.error(`No .gpx or .tcx files found in directory: ${inputPath}`);
       process.exit(1);
     }
     console.log(
-      `Found ${gpxFiles.length} .gpx file(s) in directory: ${inputPath}`,
+      `Found ${gpxFiles.length} .gpx or .tcx file(s) in directory: ${inputPath}`,
     );
   } else {
     // Treat as list of files
     gpxFiles = inputArgs;
   }
 
-  console.log(`Processing ${gpxFiles.length} GPX file(s)...`);
+  console.log(`Processing ${gpxFiles.length} GPX or TCX file(s)...`);
 
   // Process activities
   const outputDir = "./output";
@@ -48,7 +52,7 @@ async function main() {
     colors: { track: "#b7d05b", special: "#e22" },
     verbose: verboseFlag,
   };
-  const results = await processGPXActivities(gpxFiles, outputDir, options);
+  const results = await processFileActivities(gpxFiles, outputDir, options);
 
   // Print summary
   console.log("\n=== Summary ===");
@@ -68,4 +72,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { processGPXActivities };
+module.exports = { processFileActivities };

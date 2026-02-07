@@ -96,7 +96,7 @@ To customize the behavior, you can modify the options in `index.js`:
 To process different activity types, modify the `filterType` option:
 
 ```javascript
-const results = await processGPXActivities(gpxFiles, outputDir, {
+const results = await processFileActivities(gpxFiles, outputDir, {
   filterType: "Ride", // Change to 'Ride', 'Walk', etc.
   imageWidth: 500,
   imageHeight: 500,
@@ -108,7 +108,7 @@ const results = await processGPXActivities(gpxFiles, outputDir, {
 To generate different sized images:
 
 ```javascript
-const results = await processGPXActivities(gpxFiles, outputDir, {
+const results = await processFileActivities(gpxFiles, outputDir, {
   filterType: "Run",
   imageWidth: 1000, // Larger images
   imageHeight: 1000,

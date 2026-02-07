@@ -16,7 +16,7 @@
 
 #### Directory Paths
 
-- `GPX_DIR` - Source directory for GPX files (default: ./gpx)
+- `SOURCE_DIR` - Source directory for GPX files (default: ./source)
 - `OUTPUT_DIR` - Output directory for generated SVG files (default: ./output)
 
 #### Activity Filtering

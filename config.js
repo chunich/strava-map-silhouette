@@ -1,3 +1,5 @@
+const { tcx } = require("@tmcw/togeojson");
+
 require("dotenv").config();
 
 /**
@@ -13,7 +15,7 @@ const config = {
 
   // Directory paths
   paths: {
-    gpxDir: process.env.GPX_DIR || "./gpx",
+    gpxDir: process.env.SOURCE_DIR || "./source",
     outputDir: process.env.OUTPUT_DIR || "./output",
   },
 

@@ -28,10 +28,10 @@ This application uses a `.env` file for configuration. All settings can be custo
 
 ### Directory Paths
 
-**GPX_DIR** (default: `./gpx`)
+**SOURCE_DIR** (default: `./source`)
 
-- Directory containing your GPX files
-- Example: `GPX_DIR=/path/to/my/gpx/files`
+- Directory containing your GPX/TCX files
+- Example: `SOURCE_DIR=/path/to/my/files`
 
 **OUTPUT_DIR** (default: `./output`)
 
@@ -109,7 +109,7 @@ TRACK_COLOR=#2ab6e8
 ### Custom Directory Structure
 
 ```env
-GPX_DIR=/Users/username/Documents/strava-exports
+SOURCE_DIR=/Users/username/Documents/strava-exports
 OUTPUT_DIR=/Users/username/Documents/strava-images
 ```
 

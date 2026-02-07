@@ -20,7 +20,7 @@ A utility function to generate SVG from a single GPX file, used by the `/images/
 Environment variables for customization:
 
 - `PORT` - Server port (default: 3000)
-- `GPX_DIR` - GPX files directory (default: ./gpx)
+- `SOURCE_DIR` - Source files directory (default: ./source)
 - `OUTPUT_DIR` - Output directory (default: ./output)
 - `FILTER_TYPE` - Activity type filter (default: Running)
 - `IMAGE_WIDTH` - Image width (default: 500)
@@ -86,5 +86,5 @@ Open `demo.html` in your browser while the server is running.
 The original CLI functionality is preserved in `index.js`:
 
 ```bash
-npm start ./gpx
+npm start ./source
 ```

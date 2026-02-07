@@ -2,7 +2,7 @@ const express = require("express");
 const fs = require("fs").promises;
 const path = require("path");
 const config = require("./config");
-const { processGPXActivities } = require("./src/processGPXActivities");
+const { processFileActivities } = require("./src/processFileActivities");
 const { generateSingleGPXImage } = require("./src/generateSingleImage");
 
 const app = express();
@@ -19,14 +19,12 @@ app.get("/images", async (req, res) => {
   try {
     console.log(`[GET /images] Requested`);
 
-    // Check if output directory exists
+    // Check if output directory exists;
+    // Create if not
     try {
       await fs.access(config.paths.outputDir);
     } catch (error) {
-      return res.status(400).json({
-        error: "Output directory not found",
-        path: config.paths.outputDir,
-      });
+      await fs.mkdir(config.paths.outputDir, { recursive: true });
     }
 
     // Read all .svg files in the directory
@@ -68,7 +66,10 @@ app.post("/images/generate", async (req, res) => {
     // Read all .gpx files in the directory
     const files = await fs.readdir(config.paths.gpxDir);
     const gpxFiles = files
-      .filter((f) => f.toLowerCase().endsWith(".gpx"))
+      .filter(
+        (f) =>
+          f.toLowerCase().endsWith(".gpx") || f.toLowerCase().endsWith(".tcx"),
+      )
       .map((f) => path.join(config.paths.gpxDir, f));
 
     if (gpxFiles.length === 0) {
@@ -93,7 +94,7 @@ app.post("/images/generate", async (req, res) => {
       verbose: false,
     };
 
-    const results = await processGPXActivities(
+    const results = await processFileActivities(
       gpxFiles,
       config.paths.outputDir,
       options,
