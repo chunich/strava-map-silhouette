@@ -1,18 +1,18 @@
 # strava-map-silhouette
 
-Convert GPX activities to route silhouette SVG images.
+Convert GPX/TCX activities to route silhouette SVG images.
 
 ## Overview
 
-This application processes GPX activity files (from Strava or other sources) and generates silhouette images of the routes. It converts GPX coordinates to GeoJSON format and renders the route as a 500x500 pixel SVG image, focusing on the shape of the route rather than map details.
+This application processes GPX and TCX activity files (from Strava or other sources) and generates silhouette images of the routes. It converts GPX and TCX coordinates to GeoJSON format and renders the route as a 500x500 pixel SVG image, focusing on the shape of the route rather than map details.
 
 ## Features
 
-- Parse GPX files and extract coordinate data
+- Parse GPX and TCX files and extract coordinate data
 - Convert coordinates to GeoJSON format
 - Filter activities by type (e.g., "Run", "Ride")
 - Generate 500x500px silhouette images of routes as SVG
-- Batch process multiple GPX files
+- Batch process multiple GPX/TCX files
 
 ## Demo
 

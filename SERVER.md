@@ -53,7 +53,7 @@ curl http://localhost:3000/health
 {
   "status": "ok",
   "config": {
-    "gpxDir": "./source",
+    "sourceDir": "./source",
     "outputDir": "./output",
     "filterType": "Running"
   }

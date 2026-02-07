@@ -15,7 +15,7 @@ const config = {
 
   // Directory paths
   paths: {
-    gpxDir: process.env.SOURCE_DIR || "./source",
+    sourceDir: process.env.SOURCE_DIR || "./source",
     outputDir: process.env.OUTPUT_DIR || "./output",
   },
 

@@ -45,42 +45,41 @@ app.get("/images", async (req, res) => {
 
 /**
  * POST /images/generate
- * Generate all images from GPX files in the configured directory
+ * Generate all images from GPX/TCX files in the configured directory
  */
 app.post("/images/generate", async (req, res) => {
   try {
     console.log(
-      `[POST /images/generate] Starting generation from ${config.paths.gpxDir}`,
+      `[POST /images/generate] Starting generation from ${config.paths.sourceDir} with filter type "${config.filter.type}"`,
     );
 
     // Check if directory exists
     try {
-      await fs.access(config.paths.gpxDir);
+      await fs.access(config.paths.sourceDir);
     } catch (error) {
       return res.status(400).json({
-        error: "GPX directory not found",
-        path: config.paths.gpxDir,
+        error: "Source directory not found",
+        path: config.paths.sourceDir,
       });
     }
 
     // Read all .gpx files in the directory
-    const files = await fs.readdir(config.paths.gpxDir);
+    const files = await fs.readdir(config.paths.sourceDir);
     const gpxFiles = files
       .filter(
         (f) =>
           f.toLowerCase().endsWith(".gpx") || f.toLowerCase().endsWith(".tcx"),
       )
-      .map((f) => path.join(config.paths.gpxDir, f));
+      .map((f) => path.join(config.paths.sourceDir, f));
 
     if (gpxFiles.length === 0) {
       return res.status(404).json({
-        error: "No GPX files found",
-        directory: config.paths.gpxDir,
+        error: "No GPX/TCX files found",
+        directory: config.paths.sourceDir,
       });
     }
 
-    console.log(`Found ${gpxFiles.length} GPX file(s)`);
-
+    console.log(`Found ${gpxFiles.length} GPX/TCX file(s)`);
     // Process activities
     const options = {
       filterType: config.filter.type,
@@ -189,7 +188,7 @@ app.get("/health", (req, res) => {
   res.json({
     status: "ok",
     config: {
-      gpxDir: config.paths.gpxDir,
+      sourceDir: config.paths.sourceDir,
       outputDir: config.paths.outputDir,
       filterType: config.filter.type,
     },
@@ -202,18 +201,18 @@ app.get("/health", (req, res) => {
  */
 app.get("/", (req, res) => {
   res.json({
-    message: "GPX > Map Silhouette API",
+    message: "GPX/TCX > Map Silhouette API",
     version: "1.0.0",
     endpoints: {
       "POST /images/generate":
-        "Generate all images from GPX files in the configured directory",
+        "Generate all images from GPX/TCX files in the configured directory",
       "GET /images/:filename":
         "Get SVG image by generated filename (e.g., /images/2025-11-28_Activity_Name_123.svg)",
       "GET /health": "Health check and configuration status",
       "GET /demo.html": "Interactive demo page",
     },
     config: {
-      gpxDir: config.paths.gpxDir,
+      sourceDir: config.paths.sourceDir,
       outputDir: config.paths.outputDir,
       filterType: config.filter.type,
       draw: config.draw,

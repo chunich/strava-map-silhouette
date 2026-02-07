@@ -21,7 +21,7 @@ async function main() {
 
   const stat = await require("fs").promises.stat(inputPath);
   if (stat.isDirectory()) {
-    // Read all .gpx files in the directory
+    // Read all .gpx/.tcx files in the directory
     const files = await require("fs").promises.readdir(inputPath);
     gpxFiles = files
       .filter(

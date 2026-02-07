@@ -6,14 +6,14 @@
 
 A full Express.js server with the following endpoints:
 
-- **`POST /images/generate`** - Generates all images from GPX files in the configured folder
-- **`GET /images/:filename`** - Returns the SVG file for a specific GPX file (e.g., `/images/activity.gpx`)
+- **`POST /images/generate`** - Generates all images from GPX/TCX files in the configured folder
+- **`GET /images/:filename`** - Returns the SVG file for a specific GPX/TCX file (e.g., `/images/activity.gpx`)
 - **`GET /health`** - Health check and configuration status
 - **`GET /`** - API documentation
 
 ### 2. Helper Module (`src/generateSingleImage.js`)
 
-A utility function to generate SVG from a single GPX file, used by the `/images/:filename` endpoint.
+A utility function to generate SVG from a single GPX/TCX file, used by the `/images/:filename` endpoint.
 
 ### 3. Configuration
 

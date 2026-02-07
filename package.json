@@ -1,7 +1,7 @@
 {
   "name": "gpx-map-silhouette",
   "version": "1.0.0",
-  "description": "GPX > Silhouette Images",
+  "description": "GPX/TCX > Silhouette Images",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",

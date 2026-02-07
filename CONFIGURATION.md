@@ -16,7 +16,7 @@
 
 #### Directory Paths
 
-- `SOURCE_DIR` - Source directory for GPX files (default: ./source)
+- `SOURCE_DIR` - Source directory for GPX/TCX files (default: ./source)
 - `OUTPUT_DIR` - Output directory for generated SVG files (default: ./output)
 
 #### Activity Filtering
@@ -111,7 +111,7 @@ const config = require("./config");
 config.server.port;
 
 // Paths
-config.paths.gpxDir;
+config.paths.sourceDir;
 config.paths.outputDir;
 
 // Filter
