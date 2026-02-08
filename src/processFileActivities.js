@@ -103,19 +103,23 @@ async function processFileActivities(gpxFilePaths, outputDir, options = {}) {
       );
 
       // Combine activity name, date, and distance for title
-      // Format dateStr as "Month Day, Year"
+      // Format dateStr as "mm/dd/yyyy"
       let formattedDate = dateStr;
       if (activity.time) {
         const dateObj = new Date(activity.time);
         formattedDate = dateObj.toLocaleDateString("en-US", {
           year: "numeric",
-          month: "long",
-          day: "numeric",
+          month: "2-digit",
+          day: "2-digit",
         });
       }
-      const titleLabel = `${formattedDate} · ${
+
+      // OPTION 1: "mm/dd/yyyy · 3.21 mi"
+      let titleLabel = `${formattedDate} · ${
         activity?.distance ? `${activity.distance.toFixed(2)} mi` : ""
       }`;
+      // OPTION 2: "26.2 mi"
+      titleLabel = `${activity.distance.toFixed(2)}`;
 
       // Randomly select track color for variety
       const trackColorRoll = Math.random();
@@ -128,6 +132,21 @@ async function processFileActivities(gpxFilePaths, outputDir, options = {}) {
               ? options.colors.trackAlt
               : options.colors.trackAlt2,
       };
+
+      // Set dynamic colors based on distance thresholds
+      if (activity.distance >= 26.2) {
+        // Marathon or longer
+        randomColors.track = options.colors.trackMarathon;
+      } else if (activity.distance >= 13.1) {
+        // Half marathon or longer
+        randomColors.track = options.colors.trackHalfMarathon;
+      } else if (activity.distance >= 6.2) {
+        // 10K or longer
+        randomColors.track = options.colors.track10K;
+      } else if (activity.distance >= 3.1) {
+        // 5K or longer
+        randomColors.track = options.colors.track5K;
+      }
 
       // With draw options from configuration
       const svgString = tracksToSVG(tracks, {

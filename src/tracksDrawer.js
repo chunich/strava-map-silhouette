@@ -98,16 +98,6 @@ function tracksToSVG(tracks, drawOptions = {}) {
   const { width, height, offsetX, offsetY, colors, strokeWidth, aspectRatio } =
     opts;
 
-  console.log({
-    width,
-    height,
-    offsetX,
-    offsetY,
-    colors,
-    strokeWidth,
-    aspectRatio,
-  });
-
   // Compute grid: each cell is square, grid fills as much as possible
   const [cellSize, [countX, countY]] = computeGrid(
     tracks.length,
@@ -200,10 +190,10 @@ function tracksToSVG(tracks, drawOptions = {}) {
     }
   });
 
-  // Draw title to lower right corner if provided with Arial font and size 16px
+  // Draw title centered at bottom if provided
   if (drawOptions.title) {
     svgParts.push(
-      `<text x="${width - 10}" y="${height - 10}" text-anchor="end" font-size="24" fill="#666">${drawOptions.title}</text>`,
+      `<text x="${width / 2}" y="${height / 2 + 32}" text-anchor="middle" font-weight="900" font-size="72" fill="#ccc" stroke="#454444" stroke-width="3">${drawOptions.title}</text>`,
     );
   }
 

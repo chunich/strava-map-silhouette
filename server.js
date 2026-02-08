@@ -29,7 +29,9 @@ app.get("/images", async (req, res) => {
 
     // Read all .svg files in the directory
     const files = await fs.readdir(config.paths.outputDir);
-    const svgFiles = files.filter((f) => f.toLowerCase().endsWith(".svg"));
+    const svgFiles = files
+      .filter((f) => f.toLowerCase().endsWith(".svg"))
+      .sort();
 
     res.json({
       images: svgFiles,
@@ -70,6 +72,7 @@ app.post("/images/generate", async (req, res) => {
         (f) =>
           f.toLowerCase().endsWith(".gpx") || f.toLowerCase().endsWith(".tcx"),
       )
+      .sort()
       .map((f) => path.join(config.paths.sourceDir, f));
 
     if (gpxFiles.length === 0) {

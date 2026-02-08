@@ -33,6 +33,12 @@ const config = {
     offsetX: parseFloat(process.env.OFFSET_X || "0"),
     offsetY: parseFloat(process.env.OFFSET_Y || "0"),
     colors: {
+      trackMarathon: process.env.TRACK_COLOR_MARATHON || "#29e483",
+      trackHalfMarathon: process.env.TRACK_COLOR_HALF_MARATHON || "#9c2abc",
+      track10K: process.env.TRACK_COLOR_10K || "#3b55ff",
+      track5K: process.env.TRACK_COLOR_5K || "#e8a631",
+      trackDefault: process.env.TRACK_COLOR || "#ff61c2",
+      //
       track: process.env.TRACK_COLOR || "#a2c231",
       trackAlt: process.env.TRACK_COLOR_ALT || "#b75bd0",
       trackAlt2: process.env.TRACK_COLOR_ALT2 || "#318923",
