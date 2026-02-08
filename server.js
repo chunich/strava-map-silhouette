@@ -3,7 +3,6 @@ const fs = require("fs").promises;
 const path = require("path");
 const config = require("./config");
 const { processFileActivities } = require("./src/processFileActivities");
-const { generateSingleGPXImage } = require("./src/generateSingleImage");
 
 const app = express();
 

@@ -44,7 +44,7 @@
 
 - **`server.js`** - Now loads configuration from `config.js` instead of inline
 - **`src/tracksDrawer.js`** - Exports `DEFAULT_DRAW_OPTIONS` for reuse
-- **`src/generateSingleImage.js`** - Accepts custom draw options
+- **`src/processFileActivities.js`** - Accepts custom draw options
 - **`.gitignore`** - Added `.env` files to prevent committing secrets
 
 ### 4. Documentation

@@ -11,7 +11,7 @@ A full Express.js server with the following endpoints:
 - **`GET /health`** - Health check and configuration status
 - **`GET /`** - API documentation
 
-### 2. Helper Module (`src/generateSingleImage.js`)
+### 2. Helper Module (`src/processFileActivities.js`)
 
 A utility function to generate SVG from a single GPX/TCX file, used by the `/images/:filename` endpoint.
 
@@ -75,7 +75,7 @@ Open `demo.html` in your browser while the server is running.
 ## Files Modified/Created
 
 - ✅ `server.js` - New Express server
-- ✅ `src/generateSingleImage.js` - New helper module
+- ✅ `src/processFileActivities.js` - New helper module
 - ✅ `SERVER.md` - API documentation
 - ✅ `demo.html` - Interactive demo
 - ✅ `package.json` - Added server script
