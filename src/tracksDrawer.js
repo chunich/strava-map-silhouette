@@ -190,10 +190,13 @@ function tracksToSVG(tracks, drawOptions = {}) {
     }
   });
 
+  // Temporary: show title if provided (e.g. date + distance)
+  const showDistance = true;
+
   // Draw title centered at bottom if provided
-  if (drawOptions.title) {
+  if (drawOptions.title && showDistance) {
     svgParts.push(
-      `<text x="${width / 2}" y="${height / 2 + 32}" text-anchor="middle" font-weight="900" font-size="72" fill="#ccc" stroke="#454444" stroke-width="3">${drawOptions.title}</text>`,
+      `<text x="${width / 2}" y="${height / 2 + 32}" text-anchor="middle" font-weight="900" font-size="72" fill="#ccc" stroke="#0e0e0e" stroke-width="5">${drawOptions.title}</text>`,
     );
   }
 

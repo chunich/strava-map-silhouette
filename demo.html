@@ -35,13 +35,13 @@
         margin-bottom: 1rem;
       }
       .button {
-        background: #b7d05b;
+        background: #364400;
         color: white;
-        border: none;
+        border: solid 2px;
         padding: 0.75rem 1.5rem;
         border-radius: 4px;
         cursor: pointer;
-        font-size: 1rem;
+        font-size: 1.2rem;
         font-weight: 500;
         transition: background 0.2s;
       }
@@ -68,13 +68,13 @@
       }
       .image-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
         gap: 1rem;
         margin-top: 1rem;
       }
       .image-card {
         border-radius: 10px;
-        padding: 1rem;
+        padding: 0;
         background: transparent;
         text-align: center;
         align-content: center;
@@ -127,6 +127,7 @@
             Generate All Images
           </button>
           <code>POST /images/generate</code>
+          <button class="button" onclick="stitchAllImages()">Stitch All</button>
         </div>
         <div id="generateStatus"></div>
       </div>
@@ -139,6 +140,7 @@
     <script>
       const API_BASE = "http://localhost:3000";
 
+      // Refresh image list from server and load into DOM
       async function refresh() {
         const images = await getAllImages();
         console.log("Loaded images:", images.length);
@@ -152,6 +154,7 @@
         loadImageList({ results });
       }
 
+      // Fetch list of generated images from the server
       async function getAllImages() {
         try {
           const response = await fetch(`${API_BASE}/images`, {
@@ -165,6 +168,40 @@
         }
       }
 
+      // Call API to stitch all images into one silhouette PNG
+      async function stitchAllImages() {
+        const statusEl = document.getElementById("generateStatus");
+        statusEl.className = "status";
+        statusEl.innerHTML = "Stitching images...";
+
+        try {
+          const response = await fetch(`${API_BASE}/images/stitch`, {
+            method: "POST",
+          });
+          const data = await response.json();
+
+          if (data.summary?.successful > 0) {
+            const filenames = data.results
+              .filter((r) => r.success)
+              .map((r) => r.pngFile);
+            const filenameLinks = filenames
+              .map(
+                (r) =>
+                  `<a href="${API_BASE}/images/${r}" target="_blank">${r}</a>`,
+              )
+              .join(", ");
+            statusEl.className = "status success";
+            statusEl.innerHTML = `<strong>Success!</strong> Stitched image created: ${filenameLinks}`;
+          } else {
+            throw new Error(data.error || "Unknown error during stitching");
+          }
+        } catch (error) {
+          statusEl.className = "status error";
+          statusEl.innerHTML = `<strong>Error:</strong> ${error.message}`;
+        }
+      }
+
+      // Call API to generate images from all GPX/TCX files and refresh list
       async function generateAllImages() {
         const statusEl = document.getElementById("generateStatus");
         statusEl.className = "status";

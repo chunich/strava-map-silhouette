@@ -40,6 +40,14 @@ async function processFileActivities(gpxFilePaths, outputDir, options = {}) {
         console.log(
           `  Skipping: Activity type is "${activity.type}", not "${options.filterType}"`,
         );
+        // Record skipped activity
+        results.push({
+          gpxFile: "",
+          activity: activity.name,
+          type: activity.type,
+          outputImage: "",
+          status: "skipped",
+        });
         continue;
       }
 
@@ -114,12 +122,20 @@ async function processFileActivities(gpxFilePaths, outputDir, options = {}) {
         });
       }
 
-      // OPTION 1: "mm/dd/yyyy · 3.21 mi"
+      const option = 3;
+
+      // 1 = "mm/dd/yyyy · 3.21 mi", 2 = "26.2 mi"
       let titleLabel = `${formattedDate} · ${
         activity?.distance ? `${activity.distance.toFixed(2)} mi` : ""
       }`;
-      // OPTION 2: "26.2 mi"
-      titleLabel = `${activity.distance.toFixed(2)}`;
+      if (option === 2) {
+        // 1 = "26.2 mi"
+        titleLabel = `${activity.distance.toFixed(2)} mi`;
+      }
+      if (option === 3) {
+        // 3 = "26.2"
+        titleLabel = `${activity.distance.toFixed(2)}`;
+      }
 
       // Randomly select track color for variety
       const trackColorRoll = Math.random();
@@ -164,13 +180,13 @@ async function processFileActivities(gpxFilePaths, outputDir, options = {}) {
         activity: activity.name,
         type: activity.type,
         outputImage: outputPath,
-        success: true,
+        status: "success",
       });
     } catch (error) {
       console.error(`  ✗ Error processing ${gpxFilePath}:`, error.message);
       results.push({
         gpxFile: gpxFilePath,
-        success: false,
+        status: "error",
         error: error.message,
       });
     }
