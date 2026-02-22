@@ -13,6 +13,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@mapbox/polyline": "^1.2.1",
     "@tmcw/togeojson": "^7.1.2",
     "axios": "^1.13.2",
     "dotenv": "^17.2.3",

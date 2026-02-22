@@ -4,13 +4,29 @@ const path = require("path");
 const sharp = require("sharp");
 const config = require("./config");
 const { processFileActivities } = require("./src/processFileActivities");
+const { StravaClient, activitiesToTracks } = require("./src/stravaService");
+const { tracksToSVG } = require("./src/tracksDrawer");
+
+const client = new StravaClient({
+  clientId: config.strava.clientId || "CLIENT_ID",
+  clientSecret: config.strava.clientSecret || "CLIENT_SECRET",
+  accessToken: config.strava.accessToken || "CURRENT_ACCESS_TOKEN",
+  refreshToken: config.strava.refreshToken || "CURRENT_REFRESH_TOKEN",
+  expiresAt: config.strava.expiresAt || 1234567890, // Unix timestamp
+  onTokenRefresh: async (newTokens) => {
+    // Save new tokens to database/file
+    console.log("Tokens refreshed:", newTokens);
+    // await saveTokens(newTokens);
+  },
+});
 
 const app = express();
 
+// Middleware to parse JSON request bodies
+app.use(express.json());
+
 // Serve static files (for demo.html and other assets)
 app.use(express.static(__dirname));
-
-console.log("Server configuration:", config);
 
 /** GET /images
  * List all generated SVG images in the output directory
@@ -30,7 +46,11 @@ app.get("/images", async (req, res) => {
     // Read all .svg files in the directory
     const files = await fs.readdir(config.paths.outputDir);
     const svgFiles = files
-      .filter((f) => f.toLowerCase().endsWith(".svg"))
+      .filter(
+        (f) =>
+          f.toLowerCase().endsWith(".svg") &&
+          f.toLocaleLowerCase().indexOf("stitched_") === -1,
+      )
       .sort();
 
     res.json({
@@ -234,6 +254,152 @@ async function stitchSVGs(svgContents, outputPath, year) {
 }
 
 /**
+ * POST /images/generate-from-strava
+ * Generate images from Strava activities via API
+ */
+app.post("/images/generate-from-strava", async (req, res) => {
+  try {
+    console.log(
+      "[POST /images/generate-from-strava] Starting generation from Strava API",
+    );
+
+    // Fetch activities from Strava
+    const activities = await client.getAllActivities({
+      after: req.body.after || null,
+      before: req.body.before || null,
+      pageSize: req.body.pageSize || 100,
+    });
+
+    if (activities.length === 0) {
+      return res.status(404).json({
+        error: "No activities found",
+        hint: "Check your date range or token permissions",
+      });
+    }
+
+    console.log(`Found ${activities.length} Strava activities`);
+
+    // Convert activities to tracks
+    const tracks = activitiesToTracks(activities);
+    const validTracks = tracks.filter((t) => t !== null);
+
+    console.log(`Converted ${validTracks.length} activities to tracks`);
+
+    if (validTracks.length === 0) {
+      return res.status(404).json({
+        error: "No valid tracks found",
+        hint: "Activities may not have GPS data (polylines)",
+      });
+    }
+
+    // Create temporary in-memory "files" for processFileActivities
+    const trackFiles = validTracks.map((track, index) => {
+      const date = new Date(track.date).toISOString().split("T")[0];
+      const sanitizedName = track.name.replace(/[^a-zA-Z0-9]/g, "_");
+      return {
+        path: `strava_${date}_${sanitizedName}`,
+        track: track,
+        activity: {
+          name: track.name,
+          type: "Running", // Strava activities don't have exact type in polyline data
+          time: track.date,
+          coordinates: track.polylines[0].map((point) => [
+            point.lng,
+            point.lat,
+          ]),
+          distance: parseFloat(track.distance),
+        },
+      };
+    });
+
+    // Use processFileActivities-like logic with same config
+    const options = {
+      filterType: req.body.filterType || config.filter.type,
+      width: config.draw.width,
+      height: config.draw.height,
+      colors: config.draw.colors,
+      strokeWidth: config.draw.strokeWidth,
+      aspectRatio: config.draw.aspectRatio,
+      offsetX: config.draw.offsetX,
+      offsetY: config.draw.offsetY,
+      verbose: false,
+    };
+
+    const results = [];
+
+    for (const trackFile of trackFiles) {
+      try {
+        // Random color selection (same as processFileActivities)
+        const randomValue = Math.random();
+        let selectedColor;
+        if (randomValue < 0.33) {
+          selectedColor = options.colors.track;
+        } else if (randomValue < 0.66) {
+          selectedColor = options.colors.trackAlt || options.colors.track;
+        } else {
+          selectedColor = options.colors.trackAlt2 || options.colors.track;
+        }
+
+        const drawOptions = {
+          title: `${trackFile.activity.distance.toFixed(2)} mi`,
+          width: options.width,
+          height: options.height,
+          colors: { track: selectedColor },
+          strokeWidth: options.strokeWidth,
+          aspectRatio: options.aspectRatio,
+          offsetX: options.offsetX,
+          offsetY: options.offsetY,
+        };
+
+        const svgContent = tracksToSVG([trackFile.track], drawOptions);
+
+        const filename = `${trackFile.path}.svg`;
+        const outputPath = path.join(config.paths.outputDir, filename);
+
+        await fs.writeFile(outputPath, svgContent, "utf-8");
+
+        results.push({
+          activity: trackFile.activity.name,
+          date: trackFile.activity.time,
+          distance: trackFile.activity.distance.toFixed(2),
+          outputImage: filename,
+          success: true,
+        });
+      } catch (error) {
+        results.push({
+          activity: trackFile.activity.name,
+          error: error.message,
+          success: false,
+        });
+      }
+    }
+
+    const successful = results.filter((r) => r.success).length;
+    const failed = results.filter((r) => !r.success).length;
+
+    console.log(
+      `[POST /images/generate-from-strava] Complete: ${successful} successful, ${failed} failed`,
+    );
+
+    res.json({
+      message: "Strava image generation complete",
+      summary: {
+        total: results.length,
+        successful,
+        failed,
+      },
+      results,
+    });
+  } catch (error) {
+    console.error("[POST /images/generate-from-strava] Error:", error);
+    res.status(500).json({
+      error: "Failed to generate images from Strava",
+      message: error.message,
+    });
+  }
+});
+
+/**
  * POST /images/generate
  * Generate all images from GPX/TCX files in the configured directory
  */
@@ -336,7 +502,7 @@ app.post("/images/generate", async (req, res) => {
 app.get("/images/:filename", async (req, res) => {
   try {
     const { filename } = req.params;
-    console.log(`[GET /images/${filename}] Requested`);
+    // console.log(`[GET /images/${filename}] Requested`);
 
     // Validate filename
     if (
@@ -364,6 +530,7 @@ app.get("/images/:filename", async (req, res) => {
       });
     }
 
+    // PNG files are served directly as binary
     if (filename.toLowerCase().endsWith(".png")) {
       // Serve PNG file
       const pngBuffer = await fs.readFile(filePath);
@@ -407,6 +574,26 @@ app.get("/health", (req, res) => {
       filterType: config.filter.type,
     },
   });
+});
+
+/**
+ * GET /strava/activities
+ */
+app.get("/strava/activities", async (req, res) => {
+  try {
+    const activities = await client.getAllActivities({
+      after: Math.floor(Date.now() / 1000) - 30 * 24 * 60 * 60, // last 30 days
+      before: null, // no upper limit
+      pageSize: 10, // limit to 10 activities for demo
+    });
+    res.json({ message: "Activities fetched successfully", activities });
+  } catch (error) {
+    console.error("[GET /strava/activities] Error:", error);
+    res.status(500).json({
+      error: "Failed to fetch activities",
+      message: error.message,
+    });
+  }
 });
 
 /**

@@ -45,6 +45,13 @@ const config = {
       special: process.env.SPECIAL_COLOR || "#e22",
     },
   },
+
+  strava: {
+    clientId: process.env.STRAVA_CLIENT_ID,
+    clientSecret: process.env.STRAVA_CLIENT_SECRET,
+    accessToken: process.env.STRAVA_ACCESS_TOKEN,
+    refreshToken: process.env.STRAVA_REFRESH_TOKEN,
+  },
 };
 
 module.exports = config;
