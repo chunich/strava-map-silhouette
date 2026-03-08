@@ -393,7 +393,7 @@ function activityToTrack(activity) {
 
   return {
     polylines,
-    special: false,
+    isRace: false,
     name: activity.name,
     date: activity.localDate,
     distance: activity.distanceMiles,

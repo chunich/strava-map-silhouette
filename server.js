@@ -4,8 +4,8 @@ const path = require("path");
 const sharp = require("sharp");
 const config = require("./config");
 const { processFileActivities } = require("./src/processFileActivities");
-const { StravaClient, activitiesToTracks } = require("./src/stravaService");
-const { tracksToSVG } = require("./src/tracksDrawer");
+const { processStravaActivities } = require("./src/processStravaActivities");
+const { StravaClient } = require("./src/stravaService");
 
 const client = new StravaClient({
   clientId: config.strava.clientId || "CLIENT_ID",
@@ -279,42 +279,9 @@ app.post("/images/generate-from-strava", async (req, res) => {
 
     console.log(`Found ${activities.length} Strava activities`);
 
-    // Convert activities to tracks
-    const tracks = activitiesToTracks(activities);
-    const validTracks = tracks.filter((t) => t !== null);
-
-    console.log(`Converted ${validTracks.length} activities to tracks`);
-
-    if (validTracks.length === 0) {
-      return res.status(404).json({
-        error: "No valid tracks found",
-        hint: "Activities may not have GPS data (polylines)",
-      });
-    }
-
-    // Create temporary in-memory "files" for processFileActivities
-    const trackFiles = validTracks.map((track, index) => {
-      const date = new Date(track.date).toISOString().split("T")[0];
-      const sanitizedName = track.name.replace(/[^a-zA-Z0-9]/g, "_");
-      return {
-        path: `strava_${date}_${sanitizedName}`,
-        track: track,
-        activity: {
-          name: track.name,
-          type: "Running", // Strava activities don't have exact type in polyline data
-          time: track.date,
-          coordinates: track.polylines[0].map((point) => [
-            point.lng,
-            point.lat,
-          ]),
-          distance: parseFloat(track.distance),
-        },
-      };
-    });
-
-    // Use processFileActivities-like logic with same config
     const options = {
-      filterType: req.body.filterType || config.filter.type,
+      filterType: "Run", // config.filter.type,
+      minimumDistance: config.filter.minimumDistance,
       width: config.draw.width,
       height: config.draw.height,
       colors: config.draw.colors,
@@ -325,60 +292,25 @@ app.post("/images/generate-from-strava", async (req, res) => {
       verbose: false,
     };
 
-    const results = [];
+    const results = await processStravaActivities(
+      activities,
+      config.paths.outputDir,
+      options,
+    );
 
-    for (const trackFile of trackFiles) {
-      try {
-        // Random color selection (same as processFileActivities)
-        const randomValue = Math.random();
-        let selectedColor;
-        if (randomValue < 0.33) {
-          selectedColor = options.colors.track;
-        } else if (randomValue < 0.66) {
-          selectedColor = options.colors.trackAlt || options.colors.track;
-        } else {
-          selectedColor = options.colors.trackAlt2 || options.colors.track;
-        }
+    const successful = results.filter((r) => r.status === "success").length;
+    const failed = results.filter((r) => r.status === "error").length;
+    const skipped = results.filter((r) => r.status === "skipped").length;
 
-        const drawOptions = {
-          title: `${trackFile.activity.distance.toFixed(2)} mi`,
-          width: options.width,
-          height: options.height,
-          colors: { track: selectedColor },
-          strokeWidth: options.strokeWidth,
-          aspectRatio: options.aspectRatio,
-          offsetX: options.offsetX,
-          offsetY: options.offsetY,
-        };
-
-        const svgContent = tracksToSVG([trackFile.track], drawOptions);
-
-        const filename = `${trackFile.path}.svg`;
-        const outputPath = path.join(config.paths.outputDir, filename);
-
-        await fs.writeFile(outputPath, svgContent, "utf-8");
-
-        results.push({
-          activity: trackFile.activity.name,
-          date: trackFile.activity.time,
-          distance: trackFile.activity.distance.toFixed(2),
-          outputImage: filename,
-          success: true,
-        });
-      } catch (error) {
-        results.push({
-          activity: trackFile.activity.name,
-          error: error.message,
-          success: false,
-        });
-      }
+    if (successful === 0) {
+      return res.status(404).json({
+        error: "No valid tracks found",
+        hint: "Activities may be filtered out or missing GPS polyline data",
+      });
     }
 
-    const successful = results.filter((r) => r.success).length;
-    const failed = results.filter((r) => !r.success).length;
-
     console.log(
-      `[POST /images/generate-from-strava] Complete: ${successful} successful, ${failed} failed`,
+      `[POST /images/generate-from-strava] Complete: ${successful} successful, ${failed} failed, ${skipped} skipped`,
     );
 
     res.json({
@@ -387,8 +319,21 @@ app.post("/images/generate-from-strava", async (req, res) => {
         total: results.length,
         successful,
         failed,
+        skipped,
       },
-      results,
+      results: results.map((result) => ({
+        activity: result.activity,
+        type: result.type,
+        date: result.date,
+        distance: result.distance,
+        outputImage: result.outputImage
+          ? path.basename(result.outputImage)
+          : null,
+        success: result.status === "success",
+        status: result.status,
+        error: result.error || null,
+        reason: result.reason || null,
+      })),
     });
   } catch (error) {
     console.error("[POST /images/generate-from-strava] Error:", error);
@@ -440,6 +385,7 @@ app.post("/images/generate", async (req, res) => {
     // Process activities
     const options = {
       filterType: config.filter.type,
+      minimumDistance: config.filter.minimumDistance,
       width: config.draw.width,
       height: config.draw.height,
       colors: config.draw.colors,

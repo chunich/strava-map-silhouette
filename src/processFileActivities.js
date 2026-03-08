@@ -4,7 +4,11 @@ const { parseGPX } = require("./gpxParser");
 const { parseTCX } = require("./tcxParser");
 const { activityToGeoJSON } = require("./geoJsonConverter");
 const { tracksToSVG, DEFAULT_DRAW_OPTIONS } = require("./tracksDrawer");
-
+const {
+  DistanceCategory,
+  getDistanceCategory,
+} = require("./distanceCategories");
+const { getTrackColor } = require("./trackColors");
 /**
  * Process activity files (GPX/TCX) and generate silhouette images
  * @param {Array<string>} gpxFilePaths - Array of GPX/TCX file paths
@@ -12,7 +16,11 @@ const { tracksToSVG, DEFAULT_DRAW_OPTIONS } = require("./tracksDrawer");
  * @param {Object} options - Processing options
  */
 async function processFileActivities(gpxFilePaths, outputDir, options = {}) {
-  const { filterType = "Running", verbose = false } = options;
+  const {
+    filterType = "Running",
+    minimumDistance = 1,
+    verbose = false,
+  } = options;
 
   await fs.mkdir(outputDir, { recursive: true });
 
@@ -36,9 +44,27 @@ async function processFileActivities(gpxFilePaths, outputDir, options = {}) {
         fileExt === ".tcx" ? parseTCX(fileContent) : parseGPX(fileContent);
 
       // Filter by activity type (case insensitive)
-      if (activity.type.toLowerCase() !== options.filterType?.toLowerCase()) {
+      if (activity.type.toLowerCase() !== filterType?.toLowerCase()) {
         console.log(
-          `  Skipping: Activity type is "${activity.type}", not "${options.filterType}"`,
+          `  Skipping: Activity type is "${activity.type}", not "${filterType}"`,
+        );
+        // Record skipped activity
+        results.push({
+          gpxFile: "",
+          activity: activity.name,
+          type: activity.type,
+          outputImage: "",
+          status: "skipped",
+        });
+        continue;
+      }
+
+      // Discard activities that are too short (e.g. less than 1 mile)
+      if (activity.distance != null && activity.distance < minimumDistance) {
+        console.log(
+          `  Skipping: Activity distance ${activity.distance.toFixed(
+            2,
+          )} mi is less than minimum ${minimumDistance} mi`,
         );
         // Record skipped activity
         results.push({
@@ -95,7 +121,7 @@ async function processFileActivities(gpxFilePaths, outputDir, options = {}) {
       const tracks = [
         {
           polylines: [polyline],
-          special: false,
+          isRace: false,
         },
       ];
 
@@ -105,10 +131,8 @@ async function processFileActivities(gpxFilePaths, outputDir, options = {}) {
         ? new Date(activity.time).toISOString().slice(0, 10)
         : "unknown_date";
       const activityName = activity.name.replace(/\s+/g, "_");
-      const outputPath = path.join(
-        outputDir,
-        `${dateStr}_${activityName}_${baseName}_${fileExt}.svg`,
-      );
+      const filename = `${dateStr}_${activityName}_${baseName}.svg`;
+      const outputPath = path.join(outputDir, filename);
 
       // Combine activity name, date, and distance for title
       // Format dateStr as "mm/dd/yyyy"
@@ -122,53 +146,39 @@ async function processFileActivities(gpxFilePaths, outputDir, options = {}) {
         });
       }
 
+      // Get title label based on option
+      function getTitleLabel(option) {
+        // 1 = "mm/dd/yyyy · 3.21 mi", 2 = "26.2 mi", 3 = "26.2"
+        if (option === 1) {
+          return `${formattedDate} · ${
+            activity?.distance ? `${activity.distance.toFixed(2)} mi` : ""
+          }`;
+        } else if (option === 2) {
+          return activity.distance != null
+            ? `${activity.distance.toFixed(2)} mi`
+            : "";
+        } else if (option === 3) {
+          return activity.distance != null
+            ? `${activity.distance.toFixed(2)}`
+            : "";
+        }
+        return "";
+      }
+
       const option = 3;
-
-      // 1 = "mm/dd/yyyy · 3.21 mi", 2 = "26.2 mi"
-      let titleLabel = `${formattedDate} · ${
-        activity?.distance ? `${activity.distance.toFixed(2)} mi` : ""
-      }`;
-      if (option === 2) {
-        // 1 = "26.2 mi"
-        titleLabel = `${activity.distance.toFixed(2)} mi`;
-      }
-      if (option === 3) {
-        // 3 = "26.2"
-        titleLabel = `${activity.distance.toFixed(2)}`;
-      }
-
-      // Randomly select track color for variety
-      const trackColorRoll = Math.random();
-      const randomColors = {
-        ...options.colors,
-        track:
-          trackColorRoll < 0.33
-            ? options.colors.track
-            : trackColorRoll < 0.66
-              ? options.colors.trackAlt
-              : options.colors.trackAlt2,
-      };
+      const titleLabel = getTitleLabel(option);
 
       // Set dynamic colors based on distance thresholds
-      if (activity.distance >= 26.2) {
-        // Marathon or longer
-        randomColors.track = options.colors.trackMarathon;
-      } else if (activity.distance >= 13.1) {
-        // Half marathon or longer
-        randomColors.track = options.colors.trackHalfMarathon;
-      } else if (activity.distance >= 6.2) {
-        // 10K or longer
-        randomColors.track = options.colors.track10K;
-      } else if (activity.distance >= 3.1) {
-        // 5K or longer
-        randomColors.track = options.colors.track5K;
-      }
+      const trackColor = getTrackColor(activity.distance, options);
 
       // With draw options from configuration
       const svgString = tracksToSVG(tracks, {
         ...DEFAULT_DRAW_OPTIONS,
         ...options, // Merge in custom options from config
-        colors: randomColors,
+        colors: {
+          ...(options.colors || {}),
+          track: trackColor,
+        },
         title: titleLabel,
       });
       await fs.writeFile(outputPath, svgString);

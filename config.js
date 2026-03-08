@@ -22,6 +22,7 @@ const config = {
   // Activity filter
   filter: {
     type: process.env.FILTER_TYPE || "Running",
+    minimumDistance: parseFloat(process.env.MINIMUM_DISTANCE || "1"),
   },
 
   // Draw options for SVG generation
@@ -37,12 +38,9 @@ const config = {
       trackHalfMarathon: process.env.TRACK_COLOR_HALF_MARATHON || "#9c2abc",
       track10K: process.env.TRACK_COLOR_10K || "#3b55ff",
       track5K: process.env.TRACK_COLOR_5K || "#e8a631",
-      trackDefault: process.env.TRACK_COLOR || "#ff61c2",
-      //
+      trackDefault: process.env.TRACK_COLOR || "#e88ac4",
       track: process.env.TRACK_COLOR || "#a2c231",
-      trackAlt: process.env.TRACK_COLOR_ALT || "#b75bd0",
-      trackAlt2: process.env.TRACK_COLOR_ALT2 || "#318923",
-      special: process.env.SPECIAL_COLOR || "#e22",
+      race: "#e22",
     },
   },
 
