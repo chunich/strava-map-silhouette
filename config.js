@@ -2,6 +2,11 @@ const { tcx } = require("@tmcw/togeojson");
 
 require("dotenv").config();
 
+const activityLookupDays = Number.parseInt(
+  process.env.ACTIVITY_LOOKUP_DAYS || "30",
+  10,
+);
+
 /**
  * Centralized configuration for the application
  * Reads from environment variables with sensible defaults
@@ -49,6 +54,9 @@ const config = {
     clientSecret: process.env.STRAVA_CLIENT_SECRET,
     accessToken: process.env.STRAVA_ACCESS_TOKEN,
     refreshToken: process.env.STRAVA_REFRESH_TOKEN,
+    activityLookupDays: Number.isNaN(activityLookupDays)
+      ? 30
+      : activityLookupDays,
   },
 };
 

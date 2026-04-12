@@ -46,6 +46,13 @@ This application uses a `.env` file for configuration. All settings can be custo
 - Common values: `Running`, `Cycling`, `Walking`, `Hiking`
 - Example: `FILTER_TYPE=Cycling`
 
+### Strava
+
+**ACTIVITY_LOOKUP_DAYS** (default: `30`)
+
+- Number of days of recent activity to fetch for `GET /strava/activities`
+- Example: `ACTIVITY_LOOKUP_DAYS=14`
+
 ### Draw Options - Image Dimensions
 
 **IMAGE_SIZE** (default: `500`)
@@ -65,13 +72,6 @@ This application uses a `.env` file for configuration. All settings can be custo
 - Y-axis multiplier for track rendering
 - Adjust this to stretch or compress tracks vertically
 - Example: `ASPECT_RATIO=1.5`
-
-### Draw Options - Colors
-
-**TRACK_COLOR** (default: `#b7d05b`)
-
-- Hexadecimal color code for normal tracks
-- Example: `TRACK_COLOR=#2ab6e8`
 
 **SPECIAL_COLOR** (default: `#e22`)
 

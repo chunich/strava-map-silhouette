@@ -1,8 +1,7 @@
 const fs = require("fs").promises;
 const path = require("path");
 const { activitiesToTracks } = require("./stravaService");
-const { tracksToSVG, DEFAULT_DRAW_OPTIONS } = require("./tracksDrawer");
-const { getTrackColor } = require("./trackColors");
+const { generateSvg } = require("./generateSvg");
 
 function sanitizeFilenamePart(value, fallback = "activity") {
   const sanitized = (value || "")
@@ -21,7 +20,16 @@ function getActivityType(activity) {
 
 function getActivityDistanceMiles(activity) {
   const distanceMiles = Number.parseFloat(activity.distanceMiles);
-  return Number.isFinite(distanceMiles) ? distanceMiles : null;
+  if (Number.isFinite(distanceMiles)) {
+    return distanceMiles;
+  }
+
+  const distanceMeters = Number.parseFloat(activity.distance);
+  if (Number.isFinite(distanceMeters)) {
+    return distanceMeters * 0.000621371;
+  }
+
+  return null;
 }
 
 /**
@@ -56,16 +64,16 @@ async function processStravaActivities(activities, outputDir, options = {}) {
         activityType.toLowerCase() !== filterType.toLowerCase()
       ) {
         console.log(
-          `Skipping: Activity type is "${activityType}", not "${filterType}"`,
+          `  Skipping: Activity type is "${activityType}", not "${filterType}"`,
         );
         results.push({
           activity: activity.name,
           type: activityType,
+          status: "skipped",
+          reason: `Activity type is \"${activityType}\", not \"${filterType}\"`,
           date: activity.localDate || activity.date || null,
           distance: activity.distanceMiles || null,
           outputImage: null,
-          status: "skipped",
-          reason: `Activity type is \"${activityType}\", not \"${filterType}\"`,
         });
         continue;
       }
@@ -78,11 +86,11 @@ async function processStravaActivities(activities, outputDir, options = {}) {
         results.push({
           activity: activity.name,
           type: activityType,
+          status: "skipped",
+          reason: `Activity distance ${distanceMiles.toFixed(2)} mi is less than minimum ${minimumDistance} mi`,
           date: activity.localDate || activity.date || null,
           distance: distanceMiles.toFixed(2),
           outputImage: null,
-          status: "skipped",
-          reason: `Activity distance ${distanceMiles.toFixed(2)} mi is less than minimum ${minimumDistance} mi`,
         });
         continue;
       }
@@ -92,14 +100,14 @@ async function processStravaActivities(activities, outputDir, options = {}) {
         results.push({
           activity: activity.name,
           type: activityType,
+          status: "skipped",
+          reason: "Activity has no GPS polyline data",
           date: activity.localDate || activity.date || null,
           distance:
             distanceMiles != null
               ? distanceMiles.toFixed(2)
               : activity.distanceMiles,
           outputImage: null,
-          status: "skipped",
-          reason: "Activity has no GPS polyline data",
         });
         continue;
       }
@@ -110,14 +118,14 @@ async function processStravaActivities(activities, outputDir, options = {}) {
         results.push({
           activity: activity.name,
           type: activityType,
+          status: "skipped",
+          reason: "Unable to decode polyline data",
           date: activity.localDate || activity.date || null,
           distance:
             distanceMiles != null
               ? distanceMiles.toFixed(2)
               : activity.distanceMiles,
           outputImage: null,
-          status: "skipped",
-          reason: "Unable to decode polyline data",
         });
         continue;
       }
@@ -134,49 +142,33 @@ async function processStravaActivities(activities, outputDir, options = {}) {
       );
       const filename = `strava_${dateStr}_${activityName}_${activityId}.svg`;
       const outputPath = path.join(outputDir, filename);
-
-      // Set dynamic colors based on distance thresholds
-      const trackColor = getTrackColor(distanceMiles, options);
-
-      const titleLabel =
-        distanceMiles != null ? `${distanceMiles.toFixed(2)} mi` : "";
-
-      // With draw options from configuration
-      const svgContent = tracksToSVG([track], {
-        ...DEFAULT_DRAW_OPTIONS,
-        ...options,
-        colors: {
-          ...(options.colors || {}),
-          track: trackColor,
-        },
-        title: titleLabel,
+      const { svgContent } = generateSvg({
+        tracks: [track],
+        distanceMiles,
+        dateSource,
+        options,
+        titleLabelOption: 3,
       });
 
       await fs.writeFile(outputPath, svgContent, "utf-8");
-      console.log(`✓ Saved to: ${outputPath}`);
+      console.log(`  ✓ Saved to: ${outputPath}`);
 
       results.push({
         activity: activity.name,
         type: activityType,
-        date: dateSource || null,
-        distance:
-          distanceMiles != null
-            ? distanceMiles.toFixed(2)
-            : activity.distanceMiles,
-        outputImage: outputPath,
         status: "success",
+        date: dateSource || null,
+        distance: distanceMiles != null ? distanceMiles.toFixed(2) : null,
+        outputImage: outputPath,
       });
     } catch (error) {
-      console.error(
-        `✗ Error processing Strava activity \"${activity?.name || "unknown"}\":`,
-        error.message,
-      );
+      console.error(`  ✗ Error processing \"${filename}\":`, error.message);
       results.push({
         activity: activity?.name || "unknown",
         type: getActivityType(activity || {}),
-        date: activity?.localDate || activity?.date || null,
         status: "error",
         error: error.message,
+        date: activity?.localDate || activity?.date || null,
       });
     }
   }

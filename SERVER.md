@@ -22,6 +22,7 @@ Available environment variables:
 - `SOURCE_DIR` - Directory containing GPX files (default: ./source)
 - `OUTPUT_DIR` - Directory for generated SVG files (default: ./output)
 - `FILTER_TYPE` - Activity type filter (default: Running)
+- `ACTIVITY_LOOKUP_DAYS` - Number of recent days fetched by `GET /strava/activities` (default: 30)
 - `IMAGE_WIDTH` - Image width (default: 500)
 - `IMAGE_HEIGHT` - Image height (default: 500)
 
@@ -55,7 +56,8 @@ curl http://localhost:3000/health
   "config": {
     "sourceDir": "./source",
     "outputDir": "./output",
-    "filterType": "Running"
+    "filterType": "Running",
+    "activityLookupDays": 30
   }
 }
 ```

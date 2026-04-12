@@ -518,6 +518,7 @@ app.get("/health", (req, res) => {
       sourceDir: config.paths.sourceDir,
       outputDir: config.paths.outputDir,
       filterType: config.filter.type,
+      activityLookupDays: config.strava.activityLookupDays,
     },
   });
 });
@@ -527,12 +528,18 @@ app.get("/health", (req, res) => {
  */
 app.get("/strava/activities", async (req, res) => {
   try {
+    const daysSince = config.strava.activityLookupDays;
+    const pageSize = 30;
+    const afterEpoch = Math.floor(Date.now() / 1000) - daysSince * 24 * 60 * 60;
     const activities = await client.getAllActivities({
-      after: Math.floor(Date.now() / 1000) - 30 * 24 * 60 * 60, // last 30 days
+      after: afterEpoch,
       before: null, // no upper limit
-      pageSize: 10, // limit to 10 activities for demo
+      pageSize: pageSize, // per-page limit for demo
     });
-    res.json({ message: "Activities fetched successfully", activities });
+    res.json({
+      message: `Activities fetched successfully (Last ${daysSince} days; Max ${pageSize} activities)`,
+      activities,
+    });
   } catch (error) {
     console.error("[GET /strava/activities] Error:", error);
     res.status(500).json({
@@ -562,6 +569,7 @@ app.get("/", (req, res) => {
       sourceDir: config.paths.sourceDir,
       outputDir: config.paths.outputDir,
       filterType: config.filter.type,
+      activityLookupDays: config.strava.activityLookupDays,
       draw: config.draw,
     },
   });

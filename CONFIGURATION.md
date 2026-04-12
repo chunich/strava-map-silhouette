@@ -23,6 +23,10 @@
 
 - `FILTER_TYPE` - Activity type to process (default: Running)
 
+#### Strava
+
+- `ACTIVITY_LOOKUP_DAYS` - Number of recent days fetched by `GET /strava/activities` (default: 30)
+
 #### Draw Options - Dimensions
 
 - `IMAGE_WIDTH` - SVG width in pixels (default: 500)
@@ -37,7 +41,6 @@
 
 #### Draw Options - Colors
 
-- `TRACK_COLOR` - Normal track color (default: #b7d05b)
 - `SPECIAL_COLOR` - Special track color (default: #e22)
 
 ### 3. Files Modified
@@ -116,6 +119,9 @@ config.paths.outputDir;
 
 // Filter
 config.filter.type;
+
+// Strava
+config.strava.activityLookupDays;
 
 // Draw options
 config.draw.width;

@@ -3,19 +3,23 @@ const path = require("path");
 const { parseGPX } = require("./gpxParser");
 const { parseTCX } = require("./tcxParser");
 const { activityToGeoJSON } = require("./geoJsonConverter");
-const { tracksToSVG, DEFAULT_DRAW_OPTIONS } = require("./tracksDrawer");
 const {
   DistanceCategory,
   getDistanceCategory,
 } = require("./distanceCategories");
-const { getTrackColor } = require("./trackColors");
+const { generateSvg } = require("./generateSvg");
+
+function getActivityType(activity) {
+  return activity.type || "Unknown";
+}
+
 /**
  * Process activity files (GPX/TCX) and generate silhouette images
- * @param {Array<string>} gpxFilePaths - Array of GPX/TCX file paths
+ * @param {Array<string>} gpxPaths - Array of GPX/TCX file paths
  * @param {string} outputDir - Output directory for silhouette images
  * @param {Object} options - Processing options
  */
-async function processFileActivities(gpxFilePaths, outputDir, options = {}) {
+async function processFileActivities(gpxPaths, outputDir, options = {}) {
   const {
     filterType = "Running",
     minimumDistance = 1,
@@ -26,9 +30,9 @@ async function processFileActivities(gpxFilePaths, outputDir, options = {}) {
 
   const results = [];
 
-  for (const gpxFilePath of gpxFilePaths) {
+  for (const gpxPath of gpxPaths) {
     try {
-      const logLine = `Processing [${gpxFilePaths.indexOf(gpxFilePath) + 1} of ${gpxFilePaths.length}]`;
+      const logLine = `Processing [${gpxPaths.indexOf(gpxPath) + 1} of ${gpxPaths.length}]`;
       if (verbose) {
         console.log(logLine);
       } else {
@@ -36,25 +40,29 @@ async function processFileActivities(gpxFilePaths, outputDir, options = {}) {
       }
 
       // Read file and detect format
-      const fileContent = await fs.readFile(gpxFilePath, "utf-8");
-      const fileExt = path.extname(gpxFilePath).toLowerCase();
+      const fileContent = await fs.readFile(gpxPath, "utf-8");
+      const fileExt = path.extname(gpxPath).toLowerCase();
 
       // Parse based on file extension
       const activity =
         fileExt === ".tcx" ? parseTCX(fileContent) : parseGPX(fileContent);
+      const activityType = getActivityType(activity);
 
       // Filter by activity type (case insensitive)
-      if (activity.type.toLowerCase() !== filterType?.toLowerCase()) {
+      if (
+        filterType &&
+        activityType.toLowerCase() !== filterType?.toLowerCase()
+      ) {
         console.log(
-          `  Skipping: Activity type is "${activity.type}", not "${filterType}"`,
+          `  Skipping: Activity type is "${activityType}", not "${filterType}"`,
         );
         // Record skipped activity
         results.push({
-          gpxFile: "",
           activity: activity.name,
-          type: activity.type,
-          outputImage: "",
+          type: activityType,
           status: "skipped",
+          outputImage: "",
+          gpxFile: "",
         });
         continue;
       }
@@ -68,20 +76,20 @@ async function processFileActivities(gpxFilePaths, outputDir, options = {}) {
         );
         // Record skipped activity
         results.push({
-          gpxFile: "",
           activity: activity.name,
-          type: activity.type,
-          outputImage: "",
+          type: activityType,
           status: "skipped",
+          outputImage: "",
+          gpxFile: "",
         });
         continue;
       }
 
       // Log VERBOSE activity info
       if (verbose) {
-        console.log(`  ✓ Parsed file: ${gpxFilePath}`);
-        console.log(`  File:        ${path.basename(gpxFilePath)}`);
-        console.log(`  Activity:    ${activity.name} (${activity.type})`);
+        console.log(`  ✓ Parsed file: ${gpxPath}`);
+        console.log(`  File:        ${path.basename(gpxPath)}`);
+        console.log(`  Activity:    ${activity.name} (${activityType})`);
         console.log(`  Date:        ${activity.time}`);
         console.log(`  Coordinates: ${activity.coordinates.length} points`);
       }
@@ -126,78 +134,41 @@ async function processFileActivities(gpxFilePaths, outputDir, options = {}) {
       ];
 
       // Save image
-      const baseName = path.basename(gpxFilePath, path.extname(gpxFilePath));
+      const baseName = path.basename(gpxPath, path.extname(gpxPath));
       const dateStr = activity.time
         ? new Date(activity.time).toISOString().slice(0, 10)
         : "unknown_date";
       const activityName = activity.name.replace(/\s+/g, "_");
       const filename = `${dateStr}_${activityName}_${baseName}.svg`;
       const outputPath = path.join(outputDir, filename);
-
-      // Combine activity name, date, and distance for title
-      // Format dateStr as "mm/dd/yyyy"
-      let formattedDate = dateStr;
-      if (activity.time) {
-        const dateObj = new Date(activity.time);
-        formattedDate = dateObj.toLocaleDateString("en-US", {
-          year: "numeric",
-          month: "2-digit",
-          day: "2-digit",
-        });
-      }
-
-      // Get title label based on option
-      function getTitleLabel(option) {
-        // 1 = "mm/dd/yyyy · 3.21 mi", 2 = "26.2 mi", 3 = "26.2"
-        if (option === 1) {
-          return `${formattedDate} · ${
-            activity?.distance ? `${activity.distance.toFixed(2)} mi` : ""
-          }`;
-        } else if (option === 2) {
-          return activity.distance != null
-            ? `${activity.distance.toFixed(2)} mi`
-            : "";
-        } else if (option === 3) {
-          return activity.distance != null
-            ? `${activity.distance.toFixed(2)}`
-            : "";
-        }
-        return "";
-      }
-
-      const option = 3;
-      const titleLabel = getTitleLabel(option);
-
-      // Set dynamic colors based on distance thresholds
-      const trackColor = getTrackColor(activity.distance, options);
-
-      // With draw options from configuration
-      const svgString = tracksToSVG(tracks, {
-        ...DEFAULT_DRAW_OPTIONS,
-        ...options, // Merge in custom options from config
-        colors: {
-          ...(options.colors || {}),
-          track: trackColor,
-        },
-        title: titleLabel,
+      const { svgContent } = generateSvg({
+        tracks,
+        distanceMiles: activity.distance,
+        dateSource: activity.time,
+        options,
+        titleLabelOption: 3,
       });
-      await fs.writeFile(outputPath, svgString);
+      await fs.writeFile(outputPath, svgContent, "utf-8");
       console.log(`  ✓ Saved to: ${outputPath}`);
 
       // Record success
       results.push({
-        gpxFile: gpxFilePath,
         activity: activity.name,
         type: activity.type,
-        outputImage: outputPath,
         status: "success",
+        gpxFile: gpxPath,
+        distance:
+          activity.distance != null ? activity.distance.toFixed(2) : null,
+        outputImage: outputPath,
       });
     } catch (error) {
-      console.error(`  ✗ Error processing ${gpxFilePath}:`, error.message);
+      console.error(`  ✗ Error processing \"${gpxPath}\":`, error.message);
       results.push({
-        gpxFile: gpxFilePath,
+        activity: activity?.name || "unknown",
+        type: getActivityType(activity || {}),
         status: "error",
         error: error.message,
+        gpxFile: gpxPath,
       });
     }
   }
