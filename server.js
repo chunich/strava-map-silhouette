@@ -263,10 +263,14 @@ app.post("/images/generate-from-strava", async (req, res) => {
       "[POST /images/generate-from-strava] Starting generation from Strava API",
     );
 
+    const daysSince = config.strava.activityLookupDays;
+    const defaultAfterEpoch =
+      Math.floor(Date.now() / 1000) - daysSince * 24 * 60 * 60;
+
     // Fetch activities from Strava
     const activities = await client.getAllActivities({
-      after: req.body.after || null,
-      before: req.body.before || null,
+      after: req.body.after ?? defaultAfterEpoch,
+      before: req.body.before ?? null,
       pageSize: req.body.pageSize || 100,
     });
 
