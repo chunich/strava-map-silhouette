@@ -85,20 +85,12 @@ class StravaClient {
   }
 
   /**
-   * Get all activities with automatic pagination and token refresh
+   * Get all activities within the date window, auto-paginating until exhausted
    */
   async getAllActivities(options = {}) {
     await this.ensureValidToken();
-
-    const { after = null, before = null, pageSize = 20 } = options;
-    const perPage = Math.min(pageSize, 200); // Cap at Strava's max
-
-    return await this.getActivities({
-      page: 1,
-      pageSize: perPage,
-      after,
-      before,
-    });
+    const { after = null, before = null } = options;
+    return await getAllActivities(this.accessToken, { after, before });
   }
 }
 
@@ -117,7 +109,7 @@ async function getActivities(accessToken, options = {}) {
 
   const params = new URLSearchParams({
     page: page.toString(),
-    pageSize: Math.min(pageSize, 200).toString(),
+    per_page: Math.min(pageSize, 200).toString(),
   });
 
   if (after) params.append("after", after.toString());
@@ -197,7 +189,7 @@ async function getAllActivities(accessToken, options = {}) {
   while (allActivities.length < maxResults) {
     const activities = await getActivities(accessToken, {
       page,
-      perPage,
+      pageSize: perPage,
       after,
       before,
     });

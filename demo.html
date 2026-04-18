@@ -120,6 +120,29 @@
         grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
         gap: 1rem;
       }
+      .activity-row {
+        background: #444;
+        padding: 1rem;
+        border-radius: 1rem;
+      }
+      .activity-row-running {
+        background: #ccc;
+      }
+      .activity-summary {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        color: #ddd;
+        margin-bottom: 0.75rem;
+      }
+      .running-only-control {
+        border: 0;
+        padding: 0;
+        color: #ddd;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+      }
       .image-grid-control {
         display: inline-flex;
         align-items: center;
@@ -143,14 +166,14 @@
 
       <div class="endpoint">
         <div class="endpoint-header">
-          <button class="button" onclick="refresh()">Refresh 🔄</button>
+          <button class="button" onclick="refresh()">🔄</button>
           <button class="button" onclick="generateAllImages()" title="POST /images/generate">
-            GPX/TCX 🏃‍♂️
+            GPX/TCX
           </button>
           <button class="button" onclick="generateFromStrava()" title="POST /images/generate-from-strava">
-            Strava 🏃‍♂️
+            Strava
           </button>
-          <button class="button" onclick="stitchAllImages()">Stitch 🛠️</button>
+          <button class="button" onclick="stitchAllImages()">Stitch</button>
           <label>
             <input type="checkbox" onchange="toggleFilenames()" />
             Hide filenames
@@ -159,17 +182,17 @@
             class="button"
             onclick="getStravaActivities()"
           >
-            Load Strava Activities
+            Load Strava
           </button>
           <div class="image-grid-control">
-            <label for="imageGridColumns">Cards/row: <span id="imageGridColumnsValue">5</span></label>
+            <label for="imageGridColumns">Cols: <span id="imageGridColumnsValue">12</span></label>
             <input
               id="imageGridColumns"
               type="range"
               min="1"
               max="12"
               step="1"
-              value="5"
+              value="12"
             />
           </div>
         </div>
@@ -186,8 +209,20 @@
 
     <script>
       const API_BASE = "http://localhost:3000";
-      const DEFAULT_IMAGE_GRID_COLUMNS = 5;
-      let imageGridColumns = DEFAULT_IMAGE_GRID_COLUMNS;
+      let imageGridColumns = Number.parseInt(
+        document.getElementById("imageGridColumns").value,
+        10,
+      );
+      let showRunningOnly = false;
+
+      function isRunningActivity(activity) {
+        return String(activity?.type || "").toLowerCase().includes("run");
+      }
+
+      function setRunningOnly(checked) {
+        showRunningOnly = checked;
+        renderStravaActivities();
+      }
 
       function renderStravaActivities() {
         const stravaActivitiesEl = document.getElementById("stravaActivities");
@@ -196,14 +231,28 @@
           return;
         }
 
+        const visibleActivities = showRunningOnly
+          ? window.stravaActivitiesCache.filter(isRunningActivity)
+          : window.stravaActivitiesCache;
+
         stravaActivitiesEl.innerHTML = `
           <h2>Strava Activities</h2>
-          <p style="color: #ddd; margin-bottom: 0.75rem;">Showing ${window.stravaActivitiesCache.length} activities</p>
+          <div class="activity-summary">
+            <span>Showing ${visibleActivities.length} activities</span>
+            <label class="running-only-control">
+              <input
+                type="checkbox"
+                ${showRunningOnly ? "checked" : ""}
+                onchange="setRunningOnly(this.checked)"
+              />
+              Running only
+            </label>
+          </div>
           <div class="activity-table">
-            ${window.stravaActivitiesCache
+            ${visibleActivities
               .map(
                 (a) => `
-                  <div class="activity-row">
+                  <div class="activity-row ${isRunningActivity(a) ? "activity-row-running" : ""}">
                     <div class="activity-details"><strong>${a.name}</strong> (${a.type})</div>
                     <div class="activity-date">Date: ${new Date(a.start_date).toLocaleString()}</div>
                     <div class="activity-distance">Distance: ${(a.distance / 1609.34).toFixed(2)} miles</div>
@@ -328,9 +377,8 @@
         try {
           const response = await fetch(`${API_BASE}/images/generate-from-strava`, {
             method: "POST",
-            body: JSON.stringify({
-              pageSize: 10, // limit to 10 activities for demo
-            }),
+            body: JSON.stringify({}),
+            // pageSize omitted — server default from config is used
             headers: {
               "Content-Type": "application/json",
             },
@@ -414,7 +462,7 @@
       });
 
       document.getElementById("imageGridColumnsValue").textContent =
-        String(DEFAULT_IMAGE_GRID_COLUMNS);
+        String(imageGridColumns);
     </script>
   </body>
 </html>

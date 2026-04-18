@@ -271,7 +271,6 @@ app.post("/images/generate-from-strava", async (req, res) => {
     const activities = await client.getAllActivities({
       after: req.body.after ?? defaultAfterEpoch,
       before: req.body.before ?? null,
-      pageSize: req.body.pageSize || 100,
     });
 
     if (activities.length === 0) {
@@ -533,15 +532,13 @@ app.get("/health", (req, res) => {
 app.get("/strava/activities", async (req, res) => {
   try {
     const daysSince = config.strava.activityLookupDays;
-    const pageSize = 30;
     const afterEpoch = Math.floor(Date.now() / 1000) - daysSince * 24 * 60 * 60;
     const activities = await client.getAllActivities({
       after: afterEpoch,
-      before: null, // no upper limit
-      pageSize: pageSize, // per-page limit for demo
+      before: null,
     });
     res.json({
-      message: `Activities fetched successfully (Last ${daysSince} days; Max ${pageSize} activities)`,
+      message: `Activities fetched successfully (Last ${daysSince} days; ${activities.length} activities)`,
       activities,
     });
   } catch (error) {
