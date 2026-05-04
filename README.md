@@ -1,134 +1,81 @@
 # strava-map-silhouette
 
-Convert GPX/TCX activities to route silhouette SVG images.
+Option 1 migration baseline: monolithic Next.js app (frontend + backend in one codebase).
 
-## Overview
+## Current Status
 
-This application processes GPX and TCX activity files (from Strava or other sources) and generates silhouette images of the routes. It converts GPX and TCX coordinates to GeoJSON format and renders the route as a 500x500 pixel SVG image, focusing on the shape of the route rather than map details.
+- Next.js App Router scaffold added under `app/`
+- API route placeholders added under `app/api/`
+- Existing Express implementation is kept for incremental migration
+- Existing processing modules under `src/` are retained
 
-## Features
+## Tech Stack
 
-- Parse GPX and TCX files and extract coordinate data
-- Convert coordinates to GeoJSON format
-- Filter activities by type (e.g., "Run", "Ride")
-- Generate 500x500px silhouette images of routes as SVG
-- Batch process multiple GPX/TCX files
+- Next.js 14 (App Router)
+- React 18
+- TypeScript
+- Tailwind CSS
+- Existing Node modules for parsing, Strava, and image generation (`sharp`, TCX/GPX tooling)
 
-## Demo
+## Scripts
 
-You can try the tool with the included example files:
+- `npm run dev` - Start Next.js dev server
+- `npm run build` - Build Next.js app
+- `npm run start` - Start production Next.js app
+- `npm run lint` - Run Next.js lint
+- `npm run legacy:cli` - Run old CLI flow (`index.js`)
+- `npm run server` - Run legacy Express server with nodemon
 
-- Run:
-  ```bash
-  node index.js ./gpx
-  ```
-- Ride:
-  ```bash
-  node index.js ./gpx --filterType=Ride
-  ```
+## Environment Variables
 
-The output SVGs will appear in the `output/` directory.
+Copy `.env.example` to `.env` and fill values.
 
-## Prerequisites
+Important fields:
 
-- Node.js (v14 or higher)
+- `ACTIVITY_LOOKUP_DAYS`
+- `STRAVA_CLIENT_ID`
+- `STRAVA_CLIENT_SECRET`
+- `STRAVA_ACCESS_TOKEN`
+- `STRAVA_REFRESH_TOKEN`
+- `STRAVA_EXPIRES_AT`
 
-## Installation
+## API Migration Plan
+
+These Next.js route handlers are scaffolded and return `501 Not implemented` unless noted:
+
+- `GET /api/images`
+- `GET /api/images/[filename]`
+- `POST /api/images/generate`
+- `POST /api/images/generate-from-strava`
+- `POST /api/images/stitch`
+- `GET /api/strava/activities`
+- `GET /api/health` (implemented baseline)
+
+Suggested migration order:
+
+1. `GET /api/health`
+2. `GET /api/images`
+3. `GET /api/images/[filename]`
+4. `GET /api/strava/activities`
+5. `POST /api/images/generate-from-strava`
+6. `POST /api/images/generate`
+7. `POST /api/images/stitch`
+
+## Run
 
 ```bash
 npm install
+npm run dev
 ```
 
-## Usage
+Open `http://localhost:3000`.
 
-### Basic Usage
+Legacy bridge:
 
-Provide GPX file path:
+- Open `http://localhost:3000/legacy-demo` to run the existing `demo.html` through Next.js during migration.
+- Set `NEXT_PUBLIC_LEGACY_API_BASE_URL` if the legacy Express server is running on a different port than Next.js.
 
-```bash
-node index.js examples/run_example.gpx
-```
+## Notes
 
-### With Debug ON
-
-```bash
-node index.js ./gpx --debug
-```
-
-### Using npm script with Debug ON
-
-```bash
-npm start -- ./gpx --debug
-```
-
-## How It Works
-
-1. **GPX Parsing**: Reads GPX files and extracts track coordinates and metadata
-2. **Type Filtering**: Filters activities by type (default: "Run")
-3. **GeoJSON Conversion**: Converts coordinates to GeoJSON LineString format
-4. **SVG Generation**: Renders the route as a silhouette SVG image
-5. **Image Export**: Saves the route as a 500x500px SVG image
-
-## Output
-
-Generated images are saved in the `./output` directory with the naming pattern:
-
-```
-<date>_<activity_name>_<original_filename>.svg
-```
-
-## Project Structure
-
-```
-strava-map-silhouette/
-├── index.js                  # Main entry point and processing logic
-├── src/
-│   ├── gpxParser.js          # GPX file parser
-│   ├── geoJsonConverter.js   # GeoJSON conversion utilities
-├── examples/
-│   ├── run_example.gpx       # Example run activity
-│   └── ride_example.gpx      # Example ride activity
-└── output/                   # Generated silhouette images (created automatically)
-```
-
-## API Reference
-
-### processFileActivities(gpxFilePaths, outputDir, options)
-
-Main function to process GPX files and generate silhouettes.
-
-**Parameters:**
-
-- `gpxFilePaths` (Array<string>): Array of GPX file paths to process
-- `outputDir` (string): Output directory for generated images
-- `options` (Object): Processing options
-  - `filterType` (string): Activity type to filter (default: "Run")
-  - `imageWidth` (number): Output image width (default: 500)
-  - `imageHeight` (number): Output image height (default: 500)
-
-**Returns:** Promise<Array<Object>> - Array of processing results
-
-## Configuration
-
-The application can be customized by modifying the options in `index.js`:
-
-- **filterType**: Change the activity type filter (e.g., "Run", "Ride", "Walk")
-- **imageWidth/Height**: Adjust output image dimensions
-  // ...existing code...
-
-## Example GPX Files
-
-Two example GPX files are included in the `examples/` directory:
-
-- `run_example.gpx` - A run activity (will be processed)
-- `ride_example.gpx` - A ride activity (will be skipped by default filter)
-
-## Troubleshooting
-
-### "No track data found in GPX"
-
-Ensure your GPX file contains `<trk>` and `<trkpt>` elements with latitude/longitude data.
-
-## License
-
-ISC
+- During migration, you can still run the legacy Express API with `npm run server`.
+- Keep legacy files until each endpoint is ported and validated.

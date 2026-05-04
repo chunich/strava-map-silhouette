@@ -577,7 +577,7 @@ app.get("/", (req, res) => {
 });
 
 // Start server
-app.listen(config.server.port, () => {
+const server = app.listen(config.server.port, () => {
   console.log(`\n🚀 Server running on http://localhost:${config.server.port}`);
   console.log(
     `   GET  http://localhost:${config.server.port}/images - List all images`,
@@ -594,6 +594,20 @@ app.listen(config.server.port, () => {
   console.log(
     `   POST  http://localhost:${config.server.port}/images/stitch - Stitch all images into one (not implemented yet)`,
   );
+});
+
+server.on("error", (err) => {
+  if (err.code === "EADDRINUSE") {
+    console.error(
+      `\n❌ Port ${config.server.port} is already in use. Is another server running on that port?`,
+    );
+    console.error(
+      `   Run: lsof -ti:${config.server.port} | xargs kill  to free the port.`,
+    );
+    process.exit(1);
+  } else {
+    throw err;
+  }
 });
 
 module.exports = app;
