@@ -328,7 +328,7 @@
             const filenameLinks = filenames
               .map(
                 (r) =>
-                  `<a href="${API_BASE}/images/${r}" target="_blank">${r}</a>`,
+                  `<a href="${API_BASE}/api/images/${r}" target="_blank">${r}</a>`,
               )
               .join(", ");
             statusEl.className = "status success";
@@ -420,7 +420,7 @@
               const card = document.createElement("div");
               card.className = "image-card";
               card.innerHTML = `
-                            <img src="${API_BASE}/images/${result.outputImage}" alt="${result.outputImage}" title="${result.outputImage}" />
+                            <img src="${API_BASE}/api/images/${result.outputImage}" alt="${result.outputImage}" title="${result.outputImage}" />
                         `;
               card.innerHTML += `<div class="filename">${result.outputImage}</div>`;
               grid.appendChild(card);

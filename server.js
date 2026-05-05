@@ -447,7 +447,6 @@ app.post("/images/generate", async (req, res) => {
  * GET /images/:filename
  * Get the SVG image by its generated filename
  * Example: /images/2025-11-28_Cook_County_Run_473613929614966789.svg
- */
 app.get("/images/:filename", async (req, res) => {
   try {
     const { filename } = req.params;
@@ -509,6 +508,7 @@ app.get("/images/:filename", async (req, res) => {
     });
   }
 });
+ */
 
 /**
  * GET /health

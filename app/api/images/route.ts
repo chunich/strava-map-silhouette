@@ -2,6 +2,11 @@ import { access, mkdir, readdir } from "node:fs/promises";
 import { NextResponse } from "next/server";
 import config from "@/config";
 
+/**
+ * GET /images
+ * List all SVG images in the output directory in ordinary alphabetical order
+ * Exclude stitched_*.svg files which are intermediate files used for stitching
+ */
 export async function GET() {
   try {
     console.log("[GET /api/images] Requested");
