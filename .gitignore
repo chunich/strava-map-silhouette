@@ -19,6 +19,11 @@
 .DS_Store
 *.pem
 
+# environment variables
+.env
+.env.local
+.env.*.local
+
 # debug
 npm-debug.log*
 yarn-debug.log*
@@ -34,3 +39,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# output directory
+/output_files
+
+# source directory (if you want to ignore it)
+/source_files
+/test_files

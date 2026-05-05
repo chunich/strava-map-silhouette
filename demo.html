@@ -1,0 +1,468 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GPX/TCX -> Map Silhouette API Demo</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu,
+          Cantarell, sans-serif;
+        background: #333;
+        padding: 2rem;
+      }
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        /* background: white; */
+        padding: 1rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      }
+      h1 {
+        color: white;
+        margin-bottom: 1rem;
+      }
+      h2 {
+        color: #666;
+        margin-top: 2rem;
+        margin-bottom: 1rem;
+      }
+      .button {
+        background: #364400;
+        color: white;
+        border: solid 2px;
+        padding: 0.75rem 1.5rem;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 1.2rem;
+        font-weight: 500;
+        transition: background 0.2s;
+      }
+      .button:hover {
+        background: #a0ba4a;
+      }
+      .button:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+      }
+      .status {
+        margin-top: 1rem;
+        padding: 1rem;
+        border-radius: 4px;
+        background: #f0f0f0;
+      }
+      .status.success {
+        background: #d4edda;
+        color: #155724;
+      }
+      .status.error {
+        background: #f8d7da;
+        color: #721c24;
+      }
+      .image-grid {
+        display: grid;
+        grid-template-columns: repeat(var(--image-grid-cols, 5), minmax(0, 1fr));
+        gap: 1rem;
+        margin-top: 1rem;
+      }
+      .image-card {
+        border-radius: 10px;
+        padding: 0;
+        background: transparent;
+        text-align: center;
+        align-content: center;
+        aspect-ratio: 1;
+        /* box-shadow: #ccc 1px 1px 24px 0px; */
+      }
+      .image-card img {
+        max-width: 100%;
+        height: auto;
+        border-radius: 4px;
+      }
+      .image-card .filename {
+        font-size: 0.85rem;
+        color: #666;
+        margin-top: 0.5rem;
+        word-break: break-all;
+      }
+      pre {
+        background: #f4f4f4;
+        padding: 1rem;
+        border-radius: 4px;
+        overflow-x: auto;
+        font-size: 0.875rem;
+      }
+      label {
+        border: solid 2px white;
+        border-radius: 4px;
+        padding: 0.75rem;
+        color: white;
+        cursor: pointer;
+      }
+      .endpoint {
+        margin-bottom: 2rem;
+      }
+      .endpoint-header {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+        margin-bottom: 1rem;
+      }
+      .activity-table {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 1rem;
+      }
+      .activity-row {
+        background: #444;
+        padding: 1rem;
+        border-radius: 1rem;
+      }
+      .activity-row-running {
+        background: #ccc;
+      }
+      .activity-summary {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        color: #ddd;
+        margin-bottom: 0.75rem;
+      }
+      .running-only-control {
+        border: 0;
+        padding: 0;
+        color: #ddd;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+      }
+      .image-grid-control {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.75rem;
+        color: white;
+      }
+      .image-grid-control input[type="range"] {
+        width: 180px;
+      }
+      code {
+        background: #f4f4f4;
+        padding: 0.2rem 0.4rem;
+        border-radius: 3px;
+        font-size: 0.9rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>GPX/TCX to Map Silhouette API</h1>
+
+      <div class="endpoint">
+        <div class="endpoint-header">
+          <button class="button" onclick="refresh()">🔄</button>
+          <button class="button" onclick="generateAllImages()" title="POST /images/generate">
+            GPX/TCX
+          </button>
+          <button class="button" onclick="generateFromStrava()" title="POST /images/generate-from-strava">
+            Strava
+          </button>
+          <button class="button" onclick="stitchAllImages()">Stitch</button>
+          <label>
+            <input type="checkbox" onchange="toggleFilenames()" />
+            Hide filenames
+          </label>
+          <button
+            class="button"
+            onclick="getStravaActivities()"
+          >
+            Load Strava
+          </button>
+          <div class="image-grid-control">
+            <label for="imageGridColumns">Cols: <span id="imageGridColumnsValue">12</span></label>
+            <input
+              id="imageGridColumns"
+              type="range"
+              min="1"
+              max="12"
+              step="1"
+              value="12"
+            />
+          </div>
+        </div>
+        <div id="generateStatus"></div>
+      </div>
+
+      <div class="endpoint">
+        <div id="imageList"></div>
+      </div>
+
+      <div class="endpoint">
+        <div id="stravaActivities"></div>
+    </div>
+
+    <script>
+      const API_BASE = "http://localhost:3000";
+      let imageGridColumns = Number.parseInt(
+        document.getElementById("imageGridColumns").value,
+        10,
+      );
+      let showRunningOnly = false;
+
+      function isRunningActivity(activity) {
+        return String(activity?.type || "").toLowerCase().includes("run");
+      }
+
+      function setRunningOnly(checked) {
+        showRunningOnly = checked;
+        renderStravaActivities();
+      }
+
+      function renderStravaActivities() {
+        const stravaActivitiesEl = document.getElementById("stravaActivities");
+        if (!window.stravaActivitiesCache || !window.stravaActivitiesCache.length) {
+          stravaActivitiesEl.innerHTML = "<p>No Strava activities loaded</p>";
+          return;
+        }
+
+        const visibleActivities = showRunningOnly
+          ? window.stravaActivitiesCache.filter(isRunningActivity)
+          : window.stravaActivitiesCache;
+
+        stravaActivitiesEl.innerHTML = `
+          <h2>Strava Activities</h2>
+          <div class="activity-summary">
+            <span>Showing ${visibleActivities.length} activities</span>
+            <label class="running-only-control">
+              <input
+                type="checkbox"
+                ${showRunningOnly ? "checked" : ""}
+                onchange="setRunningOnly(this.checked)"
+              />
+              Running only
+            </label>
+          </div>
+          <div class="activity-table">
+            ${visibleActivities
+              .map(
+                (a) => `
+                  <div class="activity-row ${isRunningActivity(a) ? "activity-row-running" : ""}">
+                    <div class="activity-details"><strong>${a.name}</strong> (${a.type})</div>
+                    <div class="activity-date">Date: ${new Date(a.start_date).toLocaleString()}</div>
+                    <div class="activity-distance">Distance: ${(a.distance / 1609.34).toFixed(2)} miles</div>
+                    <div class="activity-moving-time">Moving Time: ${Math.floor(a.moving_time / 60)} minutes</div>
+                    <div class="activity-pace">Pace: ${a.paceMinPerMile} min/mile</div>
+                  </div>
+                `,
+              )
+              .join("")}
+          </div>
+        `;
+      }
+
+      function applyImageGridColumns() {
+        const grids = document.querySelectorAll(".image-grid");
+        grids.forEach((grid) => {
+          grid.style.setProperty("--image-grid-cols", String(imageGridColumns));
+        });
+      }
+
+      async function toggleFilenames() {
+        const checkBox = document.querySelector('input[type="checkbox"]');
+        const filenameEls = document.querySelectorAll(".filename");
+        filenameEls.forEach((el) => {
+          el.style.display = checkBox.checked ? "none" : "block";
+        });
+      }
+
+      // Refresh image list from server and load into DOM
+      async function refresh() {
+        const images = await getAllImages();
+        console.log("Loaded images:", images.length);
+
+        // Convert image filenames to results format
+        const results = images.map((filename) => ({
+          success: true,
+          outputImage: filename,
+        }));
+
+        loadImageList({ results });
+      }
+
+      // Fetch list of generated images from the server
+      async function getAllImages() {
+        try {
+          const response = await fetch(`${API_BASE}/images`, {
+            method: "GET",
+          });
+          const data = await response.json();
+          return data.images;
+        } catch (error) {
+          console.error("Error fetching images:", error);
+          return [];
+        }
+      }
+
+      // Call API to stitch all images into one silhouette PNG
+      async function stitchAllImages() {
+        const statusEl = document.getElementById("generateStatus");
+        statusEl.className = "status";
+        statusEl.innerHTML = "Stitching images...";
+
+        try {
+          const response = await fetch(`${API_BASE}/images/stitch`, {
+            method: "POST",
+          });
+          const data = await response.json();
+
+          if (data.summary?.successful > 0) {
+            const filenames = data.results
+              .filter((r) => r.success)
+              .map((r) => r.pngFile);
+            const filenameLinks = filenames
+              .map(
+                (r) =>
+                  `<a href="${API_BASE}/images/${r}" target="_blank">${r}</a>`,
+              )
+              .join(", ");
+            statusEl.className = "status success";
+            statusEl.innerHTML = `<strong>Success!</strong> Stitched image created: ${filenameLinks}`;
+          } else {
+            throw new Error(data.error || "Unknown error during stitching");
+          }
+        } catch (error) {
+          statusEl.className = "status error";
+          statusEl.innerHTML = `<strong>Error:</strong> ${error.message}`;
+        }
+      }
+
+      // Call API to generate images from all GPX/TCX files and refresh list
+      async function generateAllImages() {
+        const statusEl = document.getElementById("generateStatus");
+        statusEl.className = "status";
+        statusEl.innerHTML = "Generating images...";
+
+        try {
+          const response = await fetch(`${API_BASE}/images/generate`, {
+            method: "POST",
+          });
+          const data = await response.json();
+
+          statusEl.className = "status success";
+          statusEl.innerHTML = `
+                    <strong>Success!</strong>
+                    Generated ${data.summary.successful} of ${data.summary.total} images<br>
+                    <small>${data.summary.failed > 0 ? `${data.summary.failed} failed` : ""}</small>
+                `;
+
+          // Refresh the image list
+          loadImageList(data);
+        } catch (error) {
+          statusEl.className = "status error";
+          statusEl.innerHTML = `<strong>Error:</strong> ${error.message}`;
+        }
+      }
+
+      async function generateFromStrava() {
+        const statusEl = document.getElementById("generateStatus");
+        statusEl.className = "status";
+        statusEl.innerHTML = "Generating images from Strava...";
+
+        try {
+          const response = await fetch(`${API_BASE}/images/generate-from-strava`, {
+            method: "POST",
+            body: JSON.stringify({}),
+            // pageSize omitted — server default from config is used
+            headers: {
+              "Content-Type": "application/json",
+            },
+          });
+          const data = await response.json();
+
+          statusEl.className = "status success";
+          statusEl.innerHTML = `
+                    <strong>Success!</strong>
+                    Generated ${data.summary.successful} of ${data.summary.total} images<br>
+                    <small>${data.summary.failed > 0 ? `${data.summary.failed} failed` : ""}</small>
+                `;
+
+          // Refresh the image list
+          loadImageList(data);
+        } catch (error) {
+          statusEl.className = "status error";
+          statusEl.innerHTML = `<strong>Error:</strong> ${error.message}`;
+        }
+      }
+
+      // Load image list into the DOM with thumbnails and filenames
+      async function loadImageList(data) {
+        const listEl = document.getElementById("imageList");
+
+        try {
+          if (data.results.length === 0) {
+            listEl.innerHTML = "<p>No SVG files found</p>";
+            return;
+          }
+
+          // Create image grid
+          listEl.innerHTML = '<div class="image-grid"></div>';
+          const grid = listEl.querySelector(".image-grid");
+          grid.style.setProperty("--image-grid-cols", String(imageGridColumns));
+
+          data.results.forEach((result) => {
+            if (result.success) {
+              const card = document.createElement("div");
+              card.className = "image-card";
+              card.innerHTML = `
+                            <img src="${API_BASE}/images/${result.outputImage}" alt="${result.outputImage}" title="${result.outputImage}" />
+                        `;
+              card.innerHTML += `<div class="filename">${result.outputImage}</div>`;
+              grid.appendChild(card);
+            }
+          });
+        } catch (error) {
+          listEl.innerHTML = `<div class="status error">Error loading images: ${error.message}</div>`;
+        }
+      }
+
+      async function getStravaActivities() {
+        const statusEl = document.getElementById("generateStatus");
+        statusEl.className = "status";
+        statusEl.innerHTML = "Fetching Strava activities...";
+
+        try {
+          const response = await fetch(`${API_BASE}/strava/activities`, {
+            method: "GET",
+          });
+          const data = await response.json();
+
+          window.stravaActivitiesCache = data.activities || [];
+
+          renderStravaActivities();
+
+          statusEl.className = "status success";
+          statusEl.innerHTML = `<strong>Success!</strong> ${data.message}`;
+        } catch (error) {
+          statusEl.className = "status error";
+          statusEl.innerHTML = `<strong>Error:</strong> ${error.message}`;
+        }
+      }
+
+      document.getElementById("imageGridColumns").addEventListener("input", (e) => {
+        imageGridColumns = Number.parseInt(e.target.value, 10);
+        document.getElementById("imageGridColumnsValue").textContent =
+          String(imageGridColumns);
+        applyImageGridColumns();
+      });
+
+      document.getElementById("imageGridColumnsValue").textContent =
+        String(imageGridColumns);
+    </script>
+  </body>
+</html>
