@@ -30,7 +30,6 @@ app.use(express.static(__dirname));
 
 /** GET /images
  * List all generated SVG images in the output directory
- */
 app.get("/images", async (req, res) => {
   try {
     console.log(`[GET /images] Requested`);
@@ -64,6 +63,7 @@ app.get("/images", async (req, res) => {
     });
   }
 });
+ */
 
 /**
  * POST /images/stitch
