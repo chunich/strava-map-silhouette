@@ -69,7 +69,10 @@ app.get("/images", async (req, res) => {
  * POST /images/stitch
  * Stitch all generated SVG images into one combined image.
  * Arranges images in a grid with 5 images per row
+ * MIGRATED: This endpoint is now handled by Next.js at POST /api/images/stitch.
+ * Next step: remove this legacy block after migration verification is complete.
  */
+/*
 app.post("/images/stitch", async (req, res) => {
   try {
     console.log("[POST /images/stitch] Starting stitch operation");
@@ -252,6 +255,7 @@ async function stitchSVGs(svgContents, outputPath, year) {
     success: true,
   };
 }
+*/
 
 /**
  * POST /images/generate-from-strava

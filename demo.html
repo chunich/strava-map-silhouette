@@ -340,7 +340,7 @@
         statusEl.innerHTML = "Stitching images...";
 
         try {
-          const response = await fetch(`${API_BASE}/images/stitch`, {
+          const response = await fetch(`${API_BASE}/api/images/stitch`, {
             method: "POST",
           });
           const data = await response.json();
