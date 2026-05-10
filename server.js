@@ -536,7 +536,10 @@ app.get("/health", (req, res) => {
 
 /**
  * GET /strava/activities
+ * MIGRATED: This endpoint is now handled by Next.js at GET /api/strava/activities.
+ * Next step: remove this legacy block after migration verification is complete.
  */
+/*
 app.get("/strava/activities", async (req, res) => {
   try {
     const daysSince = config.strava.activityLookupDays;
@@ -557,6 +560,7 @@ app.get("/strava/activities", async (req, res) => {
     });
   }
 });
+*/
 
 /**
  * GET /

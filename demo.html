@@ -461,7 +461,7 @@
         statusEl.innerHTML = "Fetching Strava activities...";
 
         try {
-          const response = await fetch(`${API_BASE}/strava/activities`, {
+          const response = await fetch(`${API_BASE}/api/strava/activities`, {
             method: "GET",
           });
           const data = await response.json();
