@@ -256,7 +256,10 @@ async function stitchSVGs(svgContents, outputPath, year) {
 /**
  * POST /images/generate-from-strava
  * Generate images from Strava activities via API
+ * MIGRATED: This endpoint is now handled by Next.js at POST /api/images/generate-from-strava.
+ * Next step: remove this legacy block after migration verification is complete.
  */
+/*
 app.post("/images/generate-from-strava", async (req, res) => {
   try {
     console.log(
@@ -346,6 +349,7 @@ app.post("/images/generate-from-strava", async (req, res) => {
     });
   }
 });
+*/
 
 /**
  * POST /images/generate

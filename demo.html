@@ -194,7 +194,7 @@
           <button class="button" onclick="generateAllImages()" title="POST /api/images/generate">
             GPX/TCX
           </button>
-          <button class="button" onclick="generateFromStrava()" title="POST /images/generate-from-strava">
+          <button class="button" onclick="generateFromStrava()" title="POST /api/images/generate-from-strava">
             Strava
           </button>
           <button class="button" onclick="stitchAllImages()">Stitch</button>
@@ -399,7 +399,7 @@
         statusEl.innerHTML = "Generating images from Strava...";
 
         try {
-          const response = await fetch(`${API_BASE}/images/generate-from-strava`, {
+          const response = await fetch(`${API_BASE}/api/images/generate-from-strava`, {
             method: "POST",
             body: JSON.stringify({}),
             // pageSize omitted — server default from config is used
