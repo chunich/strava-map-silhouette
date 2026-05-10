@@ -152,6 +152,29 @@
       .image-grid-control input[type="range"] {
         width: 180px;
       }
+      .health-label {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.35rem 0.7rem;
+        border-radius: 999px;
+        font-size: 0.85rem;
+        font-weight: 700;
+        letter-spacing: 0.03em;
+        text-transform: uppercase;
+        margin-bottom: 0.75rem;
+      }
+      .health-label.checking {
+        background: #6b7280;
+        color: #f9fafb;
+      }
+      .health-label.ok {
+        background: #16a34a;
+        color: #f0fdf4;
+      }
+      .health-label.error {
+        background: #b91c1c;
+        color: #fef2f2;
+      }
       code {
         background: #f4f4f4;
         padding: 0.2rem 0.4rem;
@@ -163,6 +186,7 @@
   <body>
     <div class="container">
       <h1>GPX/TCX to Map Silhouette API</h1>
+      <div id="healthLabel" class="health-label checking">API: Checking...</div>
 
       <div class="endpoint">
         <div class="endpoint-header">
@@ -454,6 +478,31 @@
         }
       }
 
+      async function checkHealth() {
+        const healthLabelEl = document.getElementById("healthLabel");
+        healthLabelEl.className = "health-label checking";
+        healthLabelEl.textContent = "API: Checking...";
+
+        try {
+          const response = await fetch(`${API_BASE}/api/health`, {
+            method: "GET",
+          });
+          const data = await response.json();
+
+          if (response.ok && String(data?.status).toLowerCase() === "ok") {
+            healthLabelEl.className = "health-label ok";
+            healthLabelEl.textContent = "API: OK";
+            return;
+          }
+
+          healthLabelEl.className = "health-label error";
+          healthLabelEl.textContent = "API: Error";
+        } catch (error) {
+          healthLabelEl.className = "health-label error";
+          healthLabelEl.textContent = "API: Error";
+        }
+      }
+
       document.getElementById("imageGridColumns").addEventListener("input", (e) => {
         imageGridColumns = Number.parseInt(e.target.value, 10);
         document.getElementById("imageGridColumnsValue").textContent =
@@ -463,6 +512,7 @@
 
       document.getElementById("imageGridColumnsValue").textContent =
         String(imageGridColumns);
+      checkHealth();
     </script>
   </body>
 </html>

@@ -513,7 +513,6 @@ app.get("/images/:filename", async (req, res) => {
 /**
  * GET /health
  * Health check endpoint
- */
 app.get("/health", (req, res) => {
   res.json({
     status: "ok",
@@ -525,6 +524,7 @@ app.get("/health", (req, res) => {
     },
   });
 });
+*/
 
 /**
  * GET /strava/activities
