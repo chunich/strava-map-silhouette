@@ -351,6 +351,9 @@ app.post("/images/generate-from-strava", async (req, res) => {
  * POST /images/generate
  * Generate all images from GPX/TCX files in the configured directory
  */
+/*
+ * MIGRATED: This endpoint is now handled by Next.js at POST /api/images/generate.
+ * Next step: remove this legacy block after migration verification is complete.
 app.post("/images/generate", async (req, res) => {
   try {
     console.log(
@@ -442,6 +445,7 @@ app.post("/images/generate", async (req, res) => {
     });
   }
 });
+*/
 
 /**
  * GET /images/:filename

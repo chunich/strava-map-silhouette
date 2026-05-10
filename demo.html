@@ -191,7 +191,7 @@
       <div class="endpoint">
         <div class="endpoint-header">
           <button class="button" onclick="refresh()">🔄</button>
-          <button class="button" onclick="generateAllImages()" title="POST /images/generate">
+          <button class="button" onclick="generateAllImages()" title="POST /api/images/generate">
             GPX/TCX
           </button>
           <button class="button" onclick="generateFromStrava()" title="POST /images/generate-from-strava">
@@ -373,7 +373,7 @@
         statusEl.innerHTML = "Generating images...";
 
         try {
-          const response = await fetch(`${API_BASE}/images/generate`, {
+          const response = await fetch(`${API_BASE}/api/images/generate`, {
             method: "POST",
           });
           const data = await response.json();
