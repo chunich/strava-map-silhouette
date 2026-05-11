@@ -1,7 +1,0 @@
-{
-  "watch": ["server.js", "config.js", "src/**/*.js", ".env"],
-  "ext": "js,json,env",
-  "ignore": ["node_modules/**", "output/**", "gpx/**", "*.md"],
-  "delay": 1000,
-  "verbose": true
-}

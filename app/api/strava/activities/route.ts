@@ -7,8 +7,8 @@ const client = new StravaClient({
   clientSecret: config.strava.clientSecret || "CLIENT_SECRET",
   accessToken: config.strava.accessToken || "CURRENT_ACCESS_TOKEN",
   refreshToken: config.strava.refreshToken || "CURRENT_REFRESH_TOKEN",
-  expiresAt: config.strava.expiresAt || 1234567890,
-  onTokenRefresh: async (newTokens) => {
+  expiresAt: Number(process.env.STRAVA_EXPIRES_AT || 1234567890),
+  onTokenRefresh: async (newTokens: unknown) => {
     console.log("Tokens refreshed:", newTokens);
   },
 });

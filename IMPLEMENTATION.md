@@ -1,90 +1,49 @@
-# Server Implementation Summary
+# Runtime Implementation Summary
 
-## What Was Created
+## Current Architecture
 
-### 1. Server Application (`server.js`)
+This project now runs as a Next.js App Router application with API handlers under `/api/*`.
 
-A full Express.js server with the following endpoints:
+Implemented API routes:
 
-- **`POST /images/generate`** - Generates all images from GPX/TCX files in the configured folder
-- **`GET /images/:filename`** - Returns the SVG file for a specific GPX/TCX file (e.g., `/images/activity.gpx`)
-- **`GET /health`** - Health check and configuration status
-- **`GET /`** - API documentation
+- `GET /api/health`
+- `GET /api/images`
+- `GET /api/images/:filename`
+- `POST /api/images/generate`
+- `POST /api/images/generate-from-strava`
+- `POST /api/images/stitch`
+- `GET /api/strava/activities`
 
-### 2. Helper Module (`src/processFileActivities.js`)
-
-A utility function to generate SVG from a single GPX/TCX file, used by the `/images/:filename` endpoint.
-
-### 3. Configuration
-
-Environment variables for customization:
-
-- `PORT` - Server port (default: 3000)
-- `SOURCE_DIR` - Source files directory (default: ./source)
-- `OUTPUT_DIR` - Output directory (default: ./output)
-- `FILTER_TYPE` - Activity type filter (default: Running)
-- `IMAGE_WIDTH` - Image width (default: 500)
-- `IMAGE_HEIGHT` - Image height (default: 500)
-
-### 4. Documentation
-
-- `SERVER.md` - Complete API documentation with examples
-- `demo.html` - Interactive HTML demo page
-
-## How to Use
-
-### Start the Server
+## How to Run
 
 ```bash
-npm run server
+npm run dev
 ```
 
-Server will start at `http://localhost:3000`
+Open `http://localhost:3000`.
 
-### Test the Endpoints
+## Demo
 
-**Generate all images:**
+Open `http://localhost:3000/legacy-demo` to use the existing `demo.html` UI served by Next.js.
 
-```bash
-curl -X POST http://localhost:3000/images/generate
-```
+## Configuration
 
-**Get a specific image:**
+Configuration is centralized in `config.js` and loaded from `.env`.
 
-```bash
-curl http://localhost:3000/images/473613929614966789.gpx > image.svg
-```
+Key variables:
 
-Or open in browser: `http://localhost:3000/images/473613929614966789.gpx`
+- `PORT`
+- `SOURCE_DIR`
+- `OUTPUT_DIR`
+- `FILTER_TYPE`
+- `ACTIVITY_LOOKUP_DAYS`
+- `IMAGE_WIDTH`
+- `IMAGE_HEIGHT`
 
-**Health check:**
+## CLI
 
-```bash
-curl http://localhost:3000/health
-```
-
-### View Demo Page
-
-Open `demo.html` in your browser while the server is running.
-
-## Package Updates
-
-- Added `express` dependency
-- Added `npm run server` script to package.json
-
-## Files Modified/Created
-
-- ✅ `server.js` - New Express server
-- ✅ `src/processFileActivities.js` - New helper module
-- ✅ `SERVER.md` - API documentation
-- ✅ `demo.html` - Interactive demo
-- ✅ `package.json` - Added server script
-- ✅ `IMPLEMENTATION.md` - This summary
-
-## Original CLI Still Works
-
-The original CLI functionality is preserved in `index.js`:
+The original CLI flow remains available:
 
 ```bash
-npm start ./source
+npm run legacy:cli
 ```

@@ -2,15 +2,13 @@
   "name": "gpx-map-silhouette",
   "version": "1.0.0",
   "description": "GPX/TCX > Silhouette Images",
-  "main": "server.js",
+  "main": "index.js",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
     "legacy:cli": "node index.js",
-    "server": "nodemon server.js",
-    "server:prod": "node server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -21,7 +19,6 @@
     "@tmcw/togeojson": "^7.1.2",
     "axios": "^1.13.2",
     "dotenv": "^17.2.3",
-    "express": "^5.2.1",
     "fast-xml-parser": "^5.3.3",
     "next": "^14.2.5",
     "react": "^18.3.1",
@@ -36,7 +33,6 @@
     "autoprefixer": "^10.4.20",
     "eslint": "^8.57.0",
     "eslint-config-next": "^14.2.5",
-    "nodemon": "^3.1.11",
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.13",
     "typescript": "^5.6.3"

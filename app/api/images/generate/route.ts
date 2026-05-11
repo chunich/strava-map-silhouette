@@ -91,7 +91,7 @@ export async function POST() {
       },
       results: results.map((result) => ({
         gpxFile: path.basename(result.gpxFile),
-        success: result.success,
+        success: result.status === "success",
         outputImage: result.outputImage
           ? path.basename(result.outputImage)
           : null,

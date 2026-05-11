@@ -2,7 +2,7 @@
   "extends": ["next/core-web-vitals", "next/typescript"],
   "overrides": [
     {
-      "files": ["src/**/*.js", "server.js", "index.js", "config.js"],
+      "files": ["src/**/*.js", "index.js", "config.js"],
       "rules": {
         "@typescript-eslint/no-require-imports": "off",
         "@typescript-eslint/no-unused-vars": "off"
