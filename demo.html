@@ -81,6 +81,10 @@
         aspect-ratio: 1;
         /* box-shadow: #ccc 1px 1px 24px 0px; */
       }
+      .image-card:hover {
+        box-shadow: #a0ba4a 1px 1px 24px 0px;
+        border: solid 2px #a0ba4a;
+      }
       .image-card img {
         max-width: 100%;
         height: auto;
@@ -408,6 +412,13 @@
             },
           });
           const data = await response.json();
+          const isSuccess = data.summary?.successful > 0;
+
+          if (!isSuccess) {
+            statusEl.className = "status error";
+            statusEl.innerHTML = `<strong>Error:</strong> ${"Unknown error during Strava image generation"}`;
+            return;
+          }
 
           statusEl.className = "status success";
           statusEl.innerHTML = `
@@ -417,7 +428,7 @@
                 `;
 
           // Refresh the image list
-          loadImageList(data);
+          this.refresh();
         } catch (error) {
           statusEl.className = "status error";
           statusEl.innerHTML = `<strong>Error:</strong> ${error.message}`;

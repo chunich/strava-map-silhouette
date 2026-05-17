@@ -90,17 +90,6 @@ export async function POST(request: Request) {
         failed,
         skipped,
       },
-      results: results.map((result) => ({
-        activity: result.activity,
-        type: result.type,
-        date: result.date,
-        distance: result.distance,
-        outputImage: result.outputImage ? basename(result.outputImage) : null,
-        success: result.status === "success",
-        status: result.status,
-        error: result.error || null,
-        reason: result.reason || null,
-      })),
     });
   } catch (error) {
     console.error("[POST /api/images/generate-from-strava] Error:", error);
