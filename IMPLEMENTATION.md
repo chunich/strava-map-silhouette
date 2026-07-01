@@ -22,10 +22,6 @@ npm run dev
 
 Open `http://localhost:3000`.
 
-## Demo
-
-Open `http://localhost:3000/legacy-demo` to use the existing `demo.html` UI served by Next.js.
-
 ## Configuration
 
 Configuration is centralized in `config.js` and loaded from `.env`.

@@ -58,10 +58,6 @@ npm run dev
 
 Open `http://localhost:3000`.
 
-Legacy demo bridge:
-
-- Open `http://localhost:3000/legacy-demo` to run the existing `demo.html` from the Next.js app.
-
 ## Notes
 
 - The legacy Express `server.js` runtime has been retired.
