@@ -28,3 +28,224 @@ body {
     Arial,
     sans-serif;
 }
+
+a {
+  color: var(--accent);
+}
+
+.dashboard-wrap {
+  margin: 0 auto;
+  max-width: 1200px;
+  min-height: 100vh;
+  padding: 2rem;
+}
+
+.dashboard-header {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: space-between;
+}
+
+.dashboard-header h1 {
+  margin: 0;
+}
+
+.health-label {
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  padding: 0.35rem 0.7rem;
+  text-transform: uppercase;
+}
+
+.health-checking {
+  background: #6b7280;
+  color: #f9fafb;
+}
+
+.health-ok {
+  background: #16a34a;
+  color: #f0fdf4;
+}
+
+.health-error {
+  background: #b91c1c;
+  color: #fef2f2;
+}
+
+.legacy-link-row {
+  color: #d1d5db;
+  margin: 1rem 0;
+}
+
+.control-bar {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.control-bar button {
+  background: #364400;
+  border: solid 2px #849f26;
+  border-radius: 6px;
+  color: #fff;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 600;
+  padding: 0.5rem 0.9rem;
+}
+
+.control-bar button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.inline-control {
+  align-items: center;
+  color: #d4d4d8;
+  display: inline-flex;
+  gap: 0.45rem;
+}
+
+.inline-control input[type="range"] {
+  width: 160px;
+}
+
+.status-banner {
+  border-radius: 8px;
+  margin: 1rem 0;
+  padding: 0.8rem 1rem;
+}
+
+.status-banner p {
+  margin: 0;
+}
+
+.status-info {
+  background: #263348;
+  color: #dbeafe;
+}
+
+.status-success {
+  background: #24452d;
+  color: #d1fae5;
+}
+
+.status-error {
+  background: #4c1d1d;
+  color: #fecaca;
+}
+
+.status-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 0.55rem;
+}
+
+.dashboard-section {
+  margin-top: 1.5rem;
+}
+
+.dashboard-section h2 {
+  margin: 0 0 0.75rem;
+}
+
+.empty-state {
+  color: #cbd5e1;
+  margin: 0.2rem 0 0;
+}
+
+.image-grid {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.image-card {
+  align-content: center;
+  aspect-ratio: 1;
+  border: solid 1px transparent;
+  border-radius: 10px;
+  min-height: 100px;
+  padding: 0.25rem;
+  text-align: center;
+}
+
+.image-card:hover {
+  border-color: #a0ba4a;
+  box-shadow: #a0ba4a 1px 1px 24px 0;
+}
+
+.image-card img {
+  border-radius: 4px;
+  height: auto;
+  max-width: 100%;
+}
+
+.filename {
+  color: #c3cfdf;
+  font-size: 0.78rem;
+  margin-top: 0.45rem;
+  word-break: break-all;
+}
+
+.activity-section {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.activity-summary {
+  align-items: center;
+  color: #ddd;
+  display: flex;
+  gap: 1rem;
+}
+
+.activity-grid {
+  display: grid;
+  gap: 0.8rem;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+}
+
+.activity-card {
+  background: #3f3f46;
+  border-radius: 12px;
+  color: #eef2ff;
+  padding: 1rem;
+}
+
+.activity-run {
+  background: #d4d4d8;
+  color: #18181b;
+}
+
+.activity-card p {
+  margin: 0.3rem 0;
+}
+
+.activity-title {
+  align-items: baseline;
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.4rem;
+}
+
+.activity-title span {
+  font-size: 0.9rem;
+  opacity: 0.85;
+}
+
+@media (max-width: 768px) {
+  .dashboard-wrap {
+    padding: 1rem;
+  }
+
+  .inline-control input[type="range"] {
+    width: 120px;
+  }
+}
