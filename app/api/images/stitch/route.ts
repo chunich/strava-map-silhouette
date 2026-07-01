@@ -82,7 +82,7 @@ export async function POST() {
     // Check if output directory exists
     try {
       await access(config.paths.outputDir);
-    } catch (error) {
+    } catch {
       return NextResponse.json(
         {
           error: "Output directory not found",

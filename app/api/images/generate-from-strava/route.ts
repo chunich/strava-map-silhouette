@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { basename } from "node:path";
 import config from "@/config";
 import { processStravaActivities } from "@/src/processStravaActivities";
 import { StravaClient } from "@/src/stravaService";

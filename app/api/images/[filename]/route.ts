@@ -9,12 +9,24 @@ import config from "@/config";
  * Example: /api/images/2025-11-28_Cook_County_Run_473613929614966789.svg
  */
 export async function GET(
-  req: Request,
-  { params }: { params: { filename: string } },
+  _req: Request,
+  { params }: { params: Promise<{ filename: string }> | { filename: string } },
 ) {
+  let filename = "";
+
   try {
-    const { filename } = params;
+    ({ filename } = await Promise.resolve(params));
     console.log(`[GET /api/images/${filename}] Requested`);
+
+    if (!filename) {
+      return NextResponse.json(
+        {
+          error: "Missing filename",
+          message: "Filename route parameter is required",
+        },
+        { status: 400 },
+      );
+    }
 
     // Validate filename
     if (
@@ -36,7 +48,7 @@ export async function GET(
     const filePath = path.join(config.paths.outputDir, filename);
     try {
       await access(filePath);
-    } catch (error) {
+    } catch {
       return NextResponse.json(
         {
           error: "File not found",
@@ -73,7 +85,7 @@ export async function GET(
       },
     });
   } catch (error) {
-    console.error(`[GET /api/images/${params.filename}] Error:`, error);
+    console.error(`[GET /api/images/${filename || "unknown"}] Error:`, error);
 
     return NextResponse.json(
       {
