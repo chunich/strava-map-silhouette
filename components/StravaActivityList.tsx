@@ -46,7 +46,13 @@ export default function StravaActivityList({
   return (
     <section className="activity-section">
       <div className="activity-summary">
-        <span>Showing {visibleActivities.length} activities</span>
+        <span>
+          Showing {visibleActivities.length}
+          {showRunningOnly && visibleActivities.length !== activities.length
+            ? ` of ${activities.length}`
+            : ""}{" "}
+          activities
+        </span>
         <label className="inline-control">
           <input
             type="checkbox"

@@ -166,11 +166,6 @@ export default function DashboardApp() {
   return (
     <main className="dashboard-wrap">
       <DashboardHeader healthStatus={healthStatus} />
-      <p className="legacy-link-row">
-        Legacy fallback is still available at{" "}
-        <a href="/legacy-demo">/legacy-demo</a>.
-      </p>
-
       <ControlBar
         hideFilenames={hideFilenames}
         imageColumns={imageColumns}
@@ -204,7 +199,9 @@ export default function DashboardApp() {
       ) : null}
 
       <section className="dashboard-section">
-        <h2>Generated Images</h2>
+        <h2>
+          Generated Images{images.length > 0 ? ` (${images.length})` : ""}
+        </h2>
         <ImageGallery
           images={images}
           hideFilenames={hideFilenames}

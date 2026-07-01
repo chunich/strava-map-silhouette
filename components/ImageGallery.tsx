@@ -38,16 +38,23 @@ export default function ImageGallery({
     >
       {images.map((filename) => (
         <div key={filename} className="image-card">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={`/api/images/${encodeURIComponent(filename)}`}
-            alt={filename}
-            onError={(e) => {
-              (e.currentTarget as HTMLImageElement).style.opacity = "0.3";
-              (e.currentTarget as HTMLImageElement).alt =
-                `Failed to load: ${filename}`;
-            }}
-          />
+          <a
+            href={`/api/images/${encodeURIComponent(filename)}`}
+            target="_blank"
+            rel="noreferrer"
+            aria-label={`Open ${filename}`}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={`/api/images/${encodeURIComponent(filename)}`}
+              alt={filename}
+              onError={(e) => {
+                (e.currentTarget as HTMLImageElement).style.opacity = "0.3";
+                (e.currentTarget as HTMLImageElement).alt =
+                  `Failed to load: ${filename}`;
+              }}
+            />
+          </a>
           {!hideFilenames ? <div className="filename">{filename}</div> : null}
         </div>
       ))}
