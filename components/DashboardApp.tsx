@@ -9,12 +9,12 @@ import StravaActivityList from "@/components/StravaActivityList";
 import {
   generateImages,
   generateImagesFromStrava,
-  getHealth,
-  getStravaActivities,
-  listImages,
   stitchImages,
 } from "@/lib/api-client";
-import type { StatusTone, StravaActivity } from "@/lib/api-types";
+import type { StatusTone } from "@/lib/api-types";
+import { useHealthStatus } from "@/hooks/useHealthStatus";
+import { useImageList } from "@/hooks/useImageList";
+import { useStravaActivities } from "@/hooks/useStravaActivities";
 
 type StatusState = {
   tone: StatusTone;
@@ -23,25 +23,22 @@ type StatusState = {
 };
 
 export default function DashboardApp() {
-  const [healthStatus, setHealthStatus] = useState<"checking" | "ok" | "error">(
-    "checking",
-  );
+  const { healthStatus, refreshHealth } = useHealthStatus();
+  const { images, refreshImages: reloadImages } = useImageList();
+  const { activities, loadActivities } = useStravaActivities();
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
   const [status, setStatus] = useState<StatusState | null>(null);
-  const [images, setImages] = useState<string[]>([]);
   const [hideFilenames, setHideFilenames] = useState(false);
   const [imageColumns, setImageColumns] = useState(12);
-  const [activities, setActivities] = useState<StravaActivity[]>([]);
   const [showRunningOnly, setShowRunningOnly] = useState(false);
 
   const refreshImages = useCallback(async () => {
     setLoadingAction("refresh");
     try {
-      const response = await listImages();
-      setImages(response.images || []);
+      const nextImages = await reloadImages();
       setStatus({
         tone: "info",
-        message: `Loaded ${response.images.length} image(s).`,
+        message: `Loaded ${nextImages.length} image(s).`,
       });
     } catch (error) {
       setStatus({
@@ -52,7 +49,7 @@ export default function DashboardApp() {
     } finally {
       setLoadingAction(null);
     }
-  }, []);
+  }, [reloadImages]);
 
   const runGenerateFromFiles = useCallback(async () => {
     setLoadingAction("gpx");
@@ -64,7 +61,7 @@ export default function DashboardApp() {
       const response = await generateImages();
       setStatus({
         tone: "success",
-        message: `Generated ${response.summary.successful} of ${response.summary.total} image(s).`,
+        message: `Generated ${response.summary.successful} of ${response.summary.total} image(s).${response.summary.failed ? ` ${response.summary.failed} failed.` : ""}`,
       });
       await refreshImages();
     } catch (error) {
@@ -84,7 +81,7 @@ export default function DashboardApp() {
       const response = await generateImagesFromStrava();
       setStatus({
         tone: "success",
-        message: `Generated ${response.summary.successful} of ${response.summary.total} Strava image(s).`,
+        message: `Generated ${response.summary.successful} of ${response.summary.total} Strava image(s).${response.summary.failed ? ` ${response.summary.failed} failed.` : ""}${response.summary.skipped ? ` ${response.summary.skipped} skipped.` : ""}`,
       });
       await refreshImages();
     } catch (error) {
@@ -129,11 +126,10 @@ export default function DashboardApp() {
     setLoadingAction("load-strava");
     setStatus({ tone: "info", message: "Loading Strava activities..." });
     try {
-      const response = await getStravaActivities();
-      setActivities(response.activities || []);
+      const response = await loadActivities();
       setStatus({
         tone: "success",
-        message: response.message,
+        message: `${response.message} Showing ${response.activities.length} activities.`,
       });
     } catch (error) {
       setStatus({
@@ -146,24 +142,16 @@ export default function DashboardApp() {
     } finally {
       setLoadingAction(null);
     }
-  }, []);
+  }, [loadActivities]);
 
   useEffect(() => {
     async function bootstrap() {
-      try {
-        const health = await getHealth();
-        setHealthStatus(
-          String(health.status).toLowerCase() === "ok" ? "ok" : "error",
-        );
-      } catch {
-        setHealthStatus("error");
-      }
-
+      await refreshHealth();
       await refreshImages();
     }
 
     void bootstrap();
-  }, [refreshImages]);
+  }, [refreshHealth, refreshImages]);
 
   return (
     <main className="dashboard-wrap">

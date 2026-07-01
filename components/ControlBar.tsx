@@ -24,23 +24,30 @@ export default function ControlBar({
   onImageColumnsChange,
 }: ControlBarProps) {
   const busy = Boolean(loadingAction);
+  const refreshLabel =
+    loadingAction === "refresh" ? "Refreshing..." : "Refresh";
+  const gpxLabel = loadingAction === "gpx" ? "Generating..." : "GPX/TCX";
+  const stravaLabel = loadingAction === "strava" ? "Generating..." : "Strava";
+  const stitchLabel = loadingAction === "stitch" ? "Stitching..." : "Stitch";
+  const loadStravaLabel =
+    loadingAction === "load-strava" ? "Loading..." : "Load Strava";
 
   return (
-    <div className="control-bar">
+    <div className="control-bar" aria-busy={busy}>
       <button type="button" onClick={onRefresh} disabled={busy}>
-        Refresh
+        {refreshLabel}
       </button>
       <button type="button" onClick={onGenerateFromFiles} disabled={busy}>
-        GPX/TCX
+        {gpxLabel}
       </button>
       <button type="button" onClick={onGenerateFromStrava} disabled={busy}>
-        Strava
+        {stravaLabel}
       </button>
       <button type="button" onClick={onStitch} disabled={busy}>
-        Stitch
+        {stitchLabel}
       </button>
       <button type="button" onClick={onLoadStrava} disabled={busy}>
-        Load Strava
+        {loadStravaLabel}
       </button>
 
       <label className="inline-control">
