@@ -39,6 +39,7 @@ export default function ImageGallery({
       {images.map((filename) => (
         <div key={filename} className="image-card">
           <a
+            className="image-thumb"
             href={`/api/images/${encodeURIComponent(filename)}`}
             target="_blank"
             rel="noreferrer"
@@ -55,7 +56,11 @@ export default function ImageGallery({
               }}
             />
           </a>
-          {!hideFilenames ? <div className="filename">{filename}</div> : null}
+          {!hideFilenames ? (
+            <div className="filename" title={filename}>
+              {filename}
+            </div>
+          ) : null}
         </div>
       ))}
     </div>

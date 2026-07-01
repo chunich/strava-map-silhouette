@@ -1,4 +1,4 @@
-import { access, readFile } from "node:fs/promises";
+import { access, readFile, stat } from "node:fs/promises";
 import path from "node:path";
 import { NextResponse } from "next/server";
 import config from "@/config";
@@ -9,7 +9,7 @@ import config from "@/config";
  * Example: /api/images/2025-11-28_Cook_County_Run_473613929614966789.svg
  */
 export async function GET(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ filename: string }> | { filename: string } },
 ) {
   let filename = "";
@@ -29,12 +29,8 @@ export async function GET(
     }
 
     // Validate filename
-    if (
-      !filename.toLowerCase().endsWith(".svg") &&
-      !filename.toLowerCase().endsWith(".SVG") &&
-      !filename.toLowerCase().endsWith(".png") &&
-      !filename.toLowerCase().endsWith(".PNG")
-    ) {
+    const lower = filename.toLowerCase();
+    if (!lower.endsWith(".svg") && !lower.endsWith(".png")) {
       return NextResponse.json(
         {
           error: "Invalid filename",
@@ -60,8 +56,33 @@ export async function GET(
       );
     }
 
+    // Build ETag from size + mtime (no need to hash file contents)
+    const fileStat = await stat(filePath);
+    const etag = `"${fileStat.size}-${fileStat.mtimeMs}"`;
+    const lastModified = fileStat.mtime.toUTCString();
+
+    // Conditional GET: return 304 if client already has the current version
+    const ifNoneMatch = req.headers.get("if-none-match");
+    if (ifNoneMatch === etag) {
+      return new NextResponse(null, {
+        status: 304,
+        headers: {
+          ETag: etag,
+          "Last-Modified": lastModified,
+          "Cache-Control": "no-cache",
+        },
+      });
+    }
+
+    const cacheHeaders = {
+      ETag: etag,
+      "Last-Modified": lastModified,
+      // no-cache: revalidate on every request, but allow 304 shortcut
+      "Cache-Control": "no-cache",
+    };
+
     // PNG files are served directly as binary
-    if (filename.toLowerCase().endsWith(".png")) {
+    if (lower.endsWith(".png")) {
       // Serve PNG file
       const pngBuffer = await readFile(filePath);
       return new NextResponse(pngBuffer, {
@@ -69,6 +90,7 @@ export async function GET(
         headers: {
           "Content-Type": "image/png",
           "Content-Disposition": `inline; filename="${filename}"`,
+          ...cacheHeaders,
         },
       });
     }
@@ -82,6 +104,7 @@ export async function GET(
       headers: {
         "Content-Type": "image/svg+xml",
         "Content-Disposition": `inline; filename="${filename}"`,
+        ...cacheHeaders,
       },
     });
   } catch (error) {

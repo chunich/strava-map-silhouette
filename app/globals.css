@@ -213,10 +213,9 @@ a {
 
 .image-card {
   align-content: center;
-  aspect-ratio: 1;
   border: solid 1px transparent;
   border-radius: 10px;
-  min-height: 100px;
+  min-width: 0;
   padding: 0.25rem;
   text-align: center;
 }
@@ -226,17 +225,28 @@ a {
   box-shadow: #a0ba4a 1px 1px 24px 0;
 }
 
-.image-card img {
+.image-thumb {
+  aspect-ratio: 1;
   border-radius: 4px;
-  height: auto;
-  max-width: 100%;
+  display: block;
+  line-height: 0;
+  overflow: hidden;
+}
+
+.image-card img {
+  display: block;
+  height: 100%;
+  object-fit: contain;
+  width: 100%;
 }
 
 .filename {
   color: #c3cfdf;
   font-size: 0.78rem;
   margin-top: 0.45rem;
-  word-break: break-all;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .activity-section {
