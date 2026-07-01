@@ -64,7 +64,7 @@ export default function ControlBar({
         <input
           id="image-cols"
           type="range"
-          min={1}
+          min={3}
           max={12}
           step={1}
           value={imageColumns}
