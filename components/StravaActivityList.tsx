@@ -11,15 +11,32 @@ type StravaActivityListProps = {
   activities: StravaActivity[];
   showRunningOnly: boolean;
   onToggleRunningOnly: (checked: boolean) => void;
+  isLoading?: boolean;
+  error?: string | null;
 };
 
 export default function StravaActivityList({
   activities,
   showRunningOnly,
   onToggleRunningOnly,
+  isLoading = false,
+  error = null,
 }: StravaActivityListProps) {
+  if (isLoading) {
+    return <p className="empty-state loading-pulse">Loading activities...</p>;
+  }
+
+  if (error) {
+    return <p className="empty-state section-error">{error}</p>;
+  }
+
   if (activities.length === 0) {
-    return <p className="empty-state">No Strava activities loaded.</p>;
+    return (
+      <p className="empty-state">
+        No Strava activities loaded. Press <strong>Load Strava</strong> to
+        fetch.
+      </p>
+    );
   }
 
   const visibleActivities = showRunningOnly

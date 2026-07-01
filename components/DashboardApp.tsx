@@ -24,16 +24,27 @@ type StatusState = {
 
 export default function DashboardApp() {
   const { healthStatus, refreshHealth } = useHealthStatus();
-  const { images, refreshImages: reloadImages } = useImageList();
-  const { activities, loadActivities } = useStravaActivities();
+  const {
+    images,
+    isRefreshing: imagesLoading,
+    refreshImages: reloadImages,
+  } = useImageList();
+  const {
+    activities,
+    isLoading: activitiesLoading,
+    loadActivities,
+  } = useStravaActivities();
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
   const [status, setStatus] = useState<StatusState | null>(null);
+  const [imageError, setImageError] = useState<string | null>(null);
+  const [activitiesError, setActivitiesError] = useState<string | null>(null);
   const [hideFilenames, setHideFilenames] = useState(false);
   const [imageColumns, setImageColumns] = useState(12);
   const [showRunningOnly, setShowRunningOnly] = useState(false);
 
   const refreshImages = useCallback(async () => {
     setLoadingAction("refresh");
+    setImageError(null);
     try {
       const nextImages = await reloadImages();
       setStatus({
@@ -41,11 +52,10 @@ export default function DashboardApp() {
         message: `Loaded ${nextImages.length} image(s).`,
       });
     } catch (error) {
-      setStatus({
-        tone: "error",
-        message:
-          error instanceof Error ? error.message : "Failed to load images",
-      });
+      const msg =
+        error instanceof Error ? error.message : "Failed to load images";
+      setImageError(msg);
+      setStatus({ tone: "error", message: msg });
     } finally {
       setLoadingAction(null);
     }
@@ -125,6 +135,7 @@ export default function DashboardApp() {
   const loadStravaActivities = useCallback(async () => {
     setLoadingAction("load-strava");
     setStatus({ tone: "info", message: "Loading Strava activities..." });
+    setActivitiesError(null);
     try {
       const response = await loadActivities();
       setStatus({
@@ -132,13 +143,12 @@ export default function DashboardApp() {
         message: `${response.message} Showing ${response.activities.length} activities.`,
       });
     } catch (error) {
-      setStatus({
-        tone: "error",
-        message:
-          error instanceof Error
-            ? error.message
-            : "Failed to load Strava activities",
-      });
+      const msg =
+        error instanceof Error
+          ? error.message
+          : "Failed to load Strava activities";
+      setActivitiesError(msg);
+      setStatus({ tone: "error", message: msg });
     } finally {
       setLoadingAction(null);
     }
@@ -189,6 +199,7 @@ export default function DashboardApp() {
           tone={status.tone}
           message={status.message}
           links={status.links}
+          onDismiss={() => setStatus(null)}
         />
       ) : null}
 
@@ -198,6 +209,8 @@ export default function DashboardApp() {
           images={images}
           hideFilenames={hideFilenames}
           imageColumns={imageColumns}
+          isLoading={imagesLoading}
+          error={imageError}
         />
       </section>
 
@@ -207,6 +220,8 @@ export default function DashboardApp() {
           activities={activities}
           showRunningOnly={showRunningOnly}
           onToggleRunningOnly={setShowRunningOnly}
+          isLoading={activitiesLoading}
+          error={activitiesError}
         />
       </section>
     </main>

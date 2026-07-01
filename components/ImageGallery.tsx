@@ -2,15 +2,31 @@ type ImageGalleryProps = {
   images: string[];
   hideFilenames: boolean;
   imageColumns: number;
+  isLoading?: boolean;
+  error?: string | null;
 };
 
 export default function ImageGallery({
   images,
   hideFilenames,
   imageColumns,
+  isLoading = false,
+  error = null,
 }: ImageGalleryProps) {
+  if (isLoading) {
+    return <p className="empty-state loading-pulse">Loading images...</p>;
+  }
+
+  if (error) {
+    return <p className="empty-state section-error">{error}</p>;
+  }
+
   if (images.length === 0) {
-    return <p className="empty-state">No SVG files found.</p>;
+    return (
+      <p className="empty-state">
+        No images generated yet. Use GPX/TCX or Strava to generate.
+      </p>
+    );
   }
 
   return (
@@ -26,6 +42,11 @@ export default function ImageGallery({
           <img
             src={`/api/images/${encodeURIComponent(filename)}`}
             alt={filename}
+            onError={(e) => {
+              (e.currentTarget as HTMLImageElement).style.opacity = "0.3";
+              (e.currentTarget as HTMLImageElement).alt =
+                `Failed to load: ${filename}`;
+            }}
           />
           {!hideFilenames ? <div className="filename">{filename}</div> : null}
         </div>

@@ -161,6 +161,51 @@ a {
   margin: 0.2rem 0 0;
 }
 
+.section-error {
+  color: #fca5a5;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+.loading-pulse {
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+.status-banner-row {
+  align-items: flex-start;
+  display: flex;
+  gap: 0.5rem;
+  justify-content: space-between;
+}
+
+.status-banner-row p {
+  margin: 0;
+}
+
+.status-dismiss {
+  background: transparent;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  flex-shrink: 0;
+  font-size: 1rem;
+  line-height: 1;
+  opacity: 0.7;
+  padding: 0 0.2rem;
+}
+
+.status-dismiss:hover {
+  opacity: 1;
+}
+
 .image-grid {
   display: grid;
   gap: 0.8rem;

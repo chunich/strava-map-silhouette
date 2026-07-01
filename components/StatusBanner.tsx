@@ -4,12 +4,14 @@ type StatusBannerProps = {
   tone: StatusTone;
   message: string;
   links?: Array<{ label: string; href: string }>;
+  onDismiss?: () => void;
 };
 
 export default function StatusBanner({
   tone,
   message,
   links,
+  onDismiss,
 }: StatusBannerProps) {
   const toneClass =
     tone === "success"
@@ -20,7 +22,19 @@ export default function StatusBanner({
 
   return (
     <div className={`status-banner ${toneClass}`}>
-      <p>{message}</p>
+      <div className="status-banner-row">
+        <p>{message}</p>
+        {onDismiss ? (
+          <button
+            type="button"
+            className="status-dismiss"
+            onClick={onDismiss}
+            aria-label="Dismiss"
+          >
+            ✕
+          </button>
+        ) : null}
+      </div>
       {links && links.length > 0 ? (
         <div className="status-links">
           {links.map((link) => (
