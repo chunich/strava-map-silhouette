@@ -1,5 +1,9 @@
+"use client";
+
+import type { ImageListItem } from "@/lib/api-types";
+
 type ImageGalleryProps = {
-  images: string[];
+  images: ImageListItem[];
   hideFilenames: boolean;
   imageColumns: number;
   isLoading?: boolean;
@@ -36,7 +40,7 @@ export default function ImageGallery({
         gridTemplateColumns: `repeat(${imageColumns}, minmax(0, 1fr))`,
       }}
     >
-      {images.map((filename) => (
+      {images.map(({ filename, metadata }) => (
         <div key={filename} className="image-card">
           <a
             className="image-thumb"
@@ -55,6 +59,11 @@ export default function ImageGallery({
                   `Failed to load: ${filename}`;
               }}
             />
+            {metadata?.titleLabel && (
+              <div className="image-overlay-title">
+                {metadata.titleLabel}
+              </div>
+            )}
           </a>
           {!hideFilenames ? (
             <div className="filename" title={filename}>

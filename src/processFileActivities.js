@@ -141,7 +141,7 @@ async function processFileActivities(gpxPaths, outputDir, options = {}) {
       const activityName = activity.name.replace(/\s+/g, "_");
       const filename = `${dateStr}_${activityName}_${baseName}.svg`;
       const outputPath = path.join(outputDir, filename);
-      const { svgContent } = generateSvg({
+      const { svgContent, titleLabel } = generateSvg({
         tracks,
         distanceMiles: activity.distance,
         dateSource: activity.time,
@@ -149,6 +149,12 @@ async function processFileActivities(gpxPaths, outputDir, options = {}) {
         titleLabelOption: 3,
       });
       await fs.writeFile(outputPath, svgContent, "utf-8");
+      const metadataPath = outputPath.replace(".svg", ".json");
+      await fs.writeFile(
+        metadataPath,
+        JSON.stringify({ titleLabel }, null, 2),
+        "utf-8",
+      );
       console.log(`  ✓ Saved to: ${outputPath}`);
 
       // Record success

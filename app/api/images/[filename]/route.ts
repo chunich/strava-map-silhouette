@@ -5,7 +5,7 @@ import config from "@/config";
 
 /**
  * GET /api/images/:filename
- * Get the SVG image by its generated filename
+ * Get the generated image asset by its filename
  * Example: /api/images/2025-11-28_Cook_County_Run_473613929614966789.svg
  */
 export async function GET(

@@ -3,6 +3,7 @@ import config from "@/config";
 import { processStravaActivities } from "@/src/processStravaActivities";
 import { StravaClient } from "@/src/stravaService";
 
+// Initialize Strava client with config values
 const client = new StravaClient({
   clientId: config.strava.clientId || "CLIENT_ID",
   clientSecret: config.strava.clientSecret || "CLIENT_SECRET",
@@ -14,6 +15,7 @@ const client = new StravaClient({
   },
 });
 
+// POST /api/images/generate-from-strava
 export async function POST(request: Request) {
   try {
     console.log(
@@ -31,6 +33,11 @@ export async function POST(request: Request) {
       after: body.after ?? defaultAfterEpoch,
       before: body.before ?? null,
     });
+
+    console.log(
+      `[POST /api/images/generate-from-strava] Fetched activities:`,
+      activities.length,
+    );
 
     if (activities.length === 0) {
       return NextResponse.json(
@@ -92,10 +99,14 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     console.error("[POST /api/images/generate-from-strava] Error:", error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorStack = error instanceof Error ? error.stack : "";
+    console.error("[POST /api/images/generate-from-strava] Stack:", errorStack);
     return NextResponse.json(
       {
         error: "Failed to generate images from Strava",
-        message: error instanceof Error ? error.message : String(error),
+        message: errorMessage,
+        hint: "Check Strava token validity and permissions in .env",
       },
       { status: 500 },
     );

@@ -42,7 +42,7 @@ export default function DashboardApp() {
   const [imageError, setImageError] = useState<string | null>(null);
   const [activitiesError, setActivitiesError] = useState<string | null>(null);
   const [hideFilenames, setHideFilenames] = useState(false);
-  const [imageColumns, setImageColumns] = useState(12);
+  const [imageColumns, setImageColumns] = useState(5);
   const [showRunningOnly, setShowRunningOnly] = useState(false);
   const [openSection, setOpenSection] = useState<OpenSection>("images");
   const visibleActivityCount = showRunningOnly

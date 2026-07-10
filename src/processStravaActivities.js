@@ -142,7 +142,7 @@ async function processStravaActivities(activities, outputDir, options = {}) {
       );
       const filename = `strava_${dateStr}_${activityName}_${activityId}.svg`;
       const outputPath = path.join(outputDir, filename);
-      const { svgContent } = generateSvg({
+      const { svgContent, titleLabel } = generateSvg({
         tracks: [track],
         distanceMiles,
         dateSource,
@@ -151,6 +151,12 @@ async function processStravaActivities(activities, outputDir, options = {}) {
       });
 
       await fs.writeFile(outputPath, svgContent, "utf-8");
+      const metadataPath = outputPath.replace(".svg", ".json");
+      await fs.writeFile(
+        metadataPath,
+        JSON.stringify({ titleLabel }, null, 2),
+        "utf-8",
+      );
       console.log(`  ✓ Saved to: ${outputPath}`);
 
       results.push({
@@ -162,7 +168,10 @@ async function processStravaActivities(activities, outputDir, options = {}) {
         outputImage: outputPath,
       });
     } catch (error) {
-      console.error(`  ✗ Error processing \"${filename}\":`, error.message);
+      console.error(
+        `  ✗ Error processing \"${activity.name || "unknown"}\":`,
+        error.message,
+      );
       results.push({
         activity: activity?.name || "unknown",
         type: getActivityType(activity || {}),

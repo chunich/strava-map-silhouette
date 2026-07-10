@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import config from "@/config";
 import { processFileActivities } from "@/src/processFileActivities";
 
+// POST /api/images/generate
 export async function POST() {
   try {
     console.log(

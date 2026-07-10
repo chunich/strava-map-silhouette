@@ -2,9 +2,10 @@
 
 import { useCallback, useState } from "react";
 import { listImages } from "@/lib/api-client";
+import type { ImageListItem } from "@/lib/api-types";
 
 export function useImageList() {
-  const [images, setImages] = useState<string[]>([]);
+  const [images, setImages] = useState<ImageListItem[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const refreshImages = useCallback(async () => {

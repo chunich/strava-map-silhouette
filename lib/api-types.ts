@@ -16,8 +16,17 @@ export type HealthResponse = {
   };
 };
 
+export type ImageMetadata = {
+  titleLabel?: string;
+};
+
+export type ImageListItem = {
+  filename: string;
+  metadata?: ImageMetadata;
+};
+
 export type ImageListResponse = {
-  images: string[];
+  images: ImageListItem[];
 };
 
 export type GeneratedImageResult = {

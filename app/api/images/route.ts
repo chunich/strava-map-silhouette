@@ -1,4 +1,5 @@
-import { access, mkdir, readdir } from "node:fs/promises";
+import { access, mkdir, readdir, readFile } from "node:fs/promises";
+import path from "node:path";
 import { NextResponse } from "next/server";
 import config from "@/config";
 
@@ -26,8 +27,27 @@ export async function GET() {
       )
       .sort();
 
+    const images = await Promise.all(
+      svgFiles.map(async (filename) => {
+        const metadataFilename = filename.replace(/\.svg$/i, ".json");
+        const metadataPath = path.join(config.paths.outputDir, metadataFilename);
+
+        try {
+          const metadataContent = await readFile(metadataPath, "utf-8");
+          return {
+            filename,
+            metadata: JSON.parse(metadataContent) as {
+              titleLabel?: string;
+            },
+          };
+        } catch {
+          return { filename };
+        }
+      }),
+    );
+
     return NextResponse.json({
-      images: svgFiles,
+      images,
     });
   } catch (error) {
     console.error("[GET /api/images] Error:", error);
