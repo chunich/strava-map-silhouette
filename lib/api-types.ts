@@ -42,6 +42,7 @@ export type GenerateImagesResponse = {
     total: number;
     successful: number;
     failed: number;
+    skipped?: number;
   };
   results: GeneratedImageResult[];
 };

@@ -142,6 +142,25 @@ async function processStravaActivities(activities, outputDir, options = {}) {
       );
       const filename = `strava_${dateStr}_${activityName}_${activityId}.svg`;
       const outputPath = path.join(outputDir, filename);
+
+      // Skip generation if the output image already exists
+      try {
+        await fs.access(outputPath);
+        console.log(`  Skipping: Output already exists (${filename})`);
+        results.push({
+          activity: activity.name,
+          type: activityType,
+          status: "skipped",
+          reason: "already-exists",
+          date: dateSource || null,
+          distance: distanceMiles != null ? distanceMiles.toFixed(2) : null,
+          outputImage: outputPath,
+        });
+        continue;
+      } catch {
+        // File does not exist yet, proceed with generation.
+      }
+
       const { svgContent, titleLabel } = generateSvg({
         tracks: [track],
         distanceMiles,

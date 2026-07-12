@@ -74,7 +74,7 @@ export async function POST(request: Request) {
     const failed = results.filter((r) => r.status === "error").length;
     const skipped = results.filter((r) => r.status === "skipped").length;
 
-    if (successful === 0) {
+    if (successful === 0 && skipped === 0) {
       return NextResponse.json(
         {
           error: "No valid tracks found",

@@ -89,6 +89,7 @@ export async function POST() {
         total: results.length,
         successful,
         failed,
+        skipped,
       },
       results: results.map((result) => ({
         gpxFile: path.basename(result.gpxFile),

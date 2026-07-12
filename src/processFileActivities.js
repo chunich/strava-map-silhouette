@@ -31,6 +31,7 @@ async function processFileActivities(gpxPaths, outputDir, options = {}) {
   const results = [];
 
   for (const gpxPath of gpxPaths) {
+    let activity;
     try {
       const logLine = `Processing [${gpxPaths.indexOf(gpxPath) + 1} of ${gpxPaths.length}]`;
       if (verbose) {
@@ -44,7 +45,7 @@ async function processFileActivities(gpxPaths, outputDir, options = {}) {
       const fileExt = path.extname(gpxPath).toLowerCase();
 
       // Parse based on file extension
-      const activity =
+      activity =
         fileExt === ".tcx" ? parseTCX(fileContent) : parseGPX(fileContent);
       const activityType = getActivityType(activity);
 
@@ -83,6 +84,31 @@ async function processFileActivities(gpxPaths, outputDir, options = {}) {
           gpxFile: "",
         });
         continue;
+      }
+
+      const baseName = path.basename(gpxPath, path.extname(gpxPath));
+      const dateStr = activity.time
+        ? new Date(activity.time).toISOString().slice(0, 10)
+        : "unknown_date";
+      const activityName = (activity.name || "Unknown").replace(/\s+/g, "_");
+      const filename = `${dateStr}_${activityName}_${baseName}.svg`;
+      const outputPath = path.join(outputDir, filename);
+
+      // Skip generation if the output image already exists
+      try {
+        await fs.access(outputPath);
+        console.log(`  Skipping: Output already exists (${filename})`);
+        results.push({
+          activity: activity.name,
+          type: activityType,
+          status: "skipped",
+          outputImage: outputPath,
+          gpxFile: gpxPath,
+          reason: "already-exists",
+        });
+        continue;
+      } catch {
+        // File does not exist yet, proceed with generation.
       }
 
       // Log VERBOSE activity info
@@ -134,13 +160,6 @@ async function processFileActivities(gpxPaths, outputDir, options = {}) {
       ];
 
       // Save image
-      const baseName = path.basename(gpxPath, path.extname(gpxPath));
-      const dateStr = activity.time
-        ? new Date(activity.time).toISOString().slice(0, 10)
-        : "unknown_date";
-      const activityName = activity.name.replace(/\s+/g, "_");
-      const filename = `${dateStr}_${activityName}_${baseName}.svg`;
-      const outputPath = path.join(outputDir, filename);
       const { svgContent, titleLabel } = generateSvg({
         tracks,
         distanceMiles: activity.distance,

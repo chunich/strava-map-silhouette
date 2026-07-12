@@ -84,7 +84,7 @@ export default function DashboardApp() {
       const response = await generateImages();
       setStatus({
         tone: "success",
-        message: `Generated ${response.summary.successful} of ${response.summary.total} image(s).${response.summary.failed ? ` ${response.summary.failed} failed.` : ""}`,
+        message: `Generated ${response.summary.successful} of ${response.summary.total} image(s).${response.summary.failed ? ` ${response.summary.failed} failed.` : ""}${response.summary.skipped ? ` ${response.summary.skipped} skipped.` : ""}`,
       });
       await refreshImages();
     } catch (error) {
