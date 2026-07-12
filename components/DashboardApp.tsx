@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import ControlBar from "@/components/ControlBar";
 import DashboardHeader from "@/components/DashboardHeader";
 import ImageGallery from "@/components/ImageGallery";
+import RunSummary from "@/components/RunSummary";
 import StatusBanner from "@/components/StatusBanner";
 import StravaActivityList from "@/components/StravaActivityList";
 import {
@@ -210,6 +211,8 @@ export default function DashboardApp() {
           onDismiss={() => setStatus(null)}
         />
       ) : null}
+
+      <RunSummary images={images} />
 
       <section className="dashboard-section">
         <h2 className="accordion-heading">
