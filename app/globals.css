@@ -281,11 +281,26 @@ a {
   min-width: 0;
   padding: 0.25rem;
   text-align: center;
+  transition:
+    border-color 220ms ease,
+    box-shadow 240ms ease,
+    filter 220ms ease,
+    opacity 220ms ease;
 }
 
 .image-card:hover {
   border-color: #a0ba4a;
   box-shadow: #a0ba4a 1px 1px 24px 0;
+}
+
+.image-card.is-category-match {
+  border-color: #a0ba4a;
+  box-shadow: #a0ba4a 1px 1px 24px 0;
+}
+
+.image-card.is-dim {
+  filter: saturate(0.7);
+  opacity: 0.4;
 }
 
 .image-thumb {
