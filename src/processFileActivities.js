@@ -2,6 +2,7 @@ const fs = require("fs").promises;
 const path = require("path");
 const { parseGPX } = require("./gpxParser");
 const { parseTCX } = require("./tcxParser");
+const { parseFIT } = require("./fitParser");
 const { activityToGeoJSON } = require("./geoJsonConverter");
 const {
   DistanceCategory,
@@ -14,8 +15,8 @@ function getActivityType(activity) {
 }
 
 /**
- * Process activity files (GPX/TCX) and generate silhouette images
- * @param {Array<string>} gpxPaths - Array of GPX/TCX file paths
+ * Process activity files (GPX/TCX/FIT) and generate silhouette images
+ * @param {Array<string>} gpxPaths - Array of GPX/TCX/FIT file paths
  * @param {string} outputDir - Output directory for silhouette images
  * @param {Object} options - Processing options
  */
@@ -41,12 +42,22 @@ async function processFileActivities(gpxPaths, outputDir, options = {}) {
       }
 
       // Read file and detect format
-      const fileContent = await fs.readFile(gpxPath, "utf-8");
       const fileExt = path.extname(gpxPath).toLowerCase();
+      const isFitFile = fileExt === ".fit";
+      const fileContent = isFitFile
+        ? await fs.readFile(gpxPath)
+        : await fs.readFile(gpxPath, "utf-8");
 
       // Parse based on file extension
-      activity =
-        fileExt === ".tcx" ? parseTCX(fileContent) : parseGPX(fileContent);
+      if (fileExt === ".tcx") {
+        activity = parseTCX(fileContent);
+      } else if (fileExt === ".gpx") {
+        activity = parseGPX(fileContent);
+      } else if (fileExt === ".fit") {
+        activity = await parseFIT(fileContent);
+      } else {
+        throw new Error(`Unsupported file extension: ${fileExt}`);
+      }
       const activityType = getActivityType(activity);
 
       // Filter by activity type (case insensitive)
@@ -123,8 +134,8 @@ async function processFileActivities(gpxPaths, outputDir, options = {}) {
       // Convert to polyline format
       let polyline = [];
 
-      if (fileExt === ".tcx") {
-        // TCX already has coordinates in the right format
+      if (fileExt === ".tcx" || fileExt === ".fit") {
+        // TCX/FIT already provide coordinates in [lng, lat].
         polyline = activity.coordinates.map(([lng, lat]) => ({ lng, lat }));
       } else {
         // GPX needs GeoJSON conversion
@@ -169,9 +180,13 @@ async function processFileActivities(gpxPaths, outputDir, options = {}) {
       });
       await fs.writeFile(outputPath, svgContent, "utf-8");
       const metadataPath = outputPath.replace(".svg", ".json");
+      const metadata = {
+        titleLabel,
+        ...(activity.metrics ? { metrics: activity.metrics } : {}),
+      };
       await fs.writeFile(
         metadataPath,
-        JSON.stringify({ titleLabel }, null, 2),
+        JSON.stringify(metadata, null, 2),
         "utf-8",
       );
       console.log(`  ✓ Saved to: ${outputPath}`);

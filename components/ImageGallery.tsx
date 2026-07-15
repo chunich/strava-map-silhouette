@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import type { ImageListItem } from "@/lib/api-types";
 
 type ImageGalleryProps = {
   images: ImageListItem[];
   hideFilenames: boolean;
+  showImageOverlay: boolean;
   imageColumns: number;
   isLoading?: boolean;
   error?: string | null;
@@ -29,11 +30,46 @@ function getDistanceCategory(metadata?: {
 export default function ImageGallery({
   images,
   hideFilenames,
+  showImageOverlay,
   imageColumns,
   isLoading = false,
   error = null,
 }: ImageGalleryProps) {
   const [hoveredCategory, setHoveredCategory] = useState<number | null>(null);
+  const cardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  const prevRects = useRef<Map<string, DOMRect>>(new Map());
+
+  useLayoutEffect(() => {
+    const nextRects = new Map<string, DOMRect>();
+    for (const [filename, element] of cardRefs.current) {
+      nextRects.set(filename, element.getBoundingClientRect());
+    }
+
+    // Animate from previous layout position to current (FLIP)
+    for (const [filename, element] of cardRefs.current) {
+      const previous = prevRects.current.get(filename);
+      const next = nextRects.get(filename);
+      if (!previous || !next) continue;
+
+      const deltaX = previous.left - next.left;
+      const deltaY = previous.top - next.top;
+
+      if (Math.abs(deltaX) < 0.5 && Math.abs(deltaY) < 0.5) continue;
+
+      element.animate(
+        [
+          { transform: `translate(${deltaX}px, ${deltaY}px)` },
+          { transform: "translate(0, 0)" },
+        ],
+        {
+          duration: 220,
+          easing: "cubic-bezier(0.22, 1, 0.36, 1)",
+        },
+      );
+    }
+
+    prevRects.current = nextRects;
+  }, [images, imageColumns, hideFilenames, showImageOverlay]);
 
   if (isLoading) {
     return <p className="empty-state loading-pulse">Loading images...</p>;
@@ -68,6 +104,13 @@ export default function ImageGallery({
         return (
           <div
             key={filename}
+            ref={(element) => {
+              if (element) {
+                cardRefs.current.set(filename, element);
+              } else {
+                cardRefs.current.delete(filename);
+              }
+            }}
             className={`image-card ${isCategoryMatch ? "is-category-match" : ""} ${isDimmed ? "is-dim" : ""}`}
             onMouseEnter={() => {
               setHoveredCategory(category);
@@ -99,7 +142,7 @@ export default function ImageGallery({
                     `Failed to load: ${filename}`;
                 }}
               />
-              {metadata?.titleLabel && (
+              {showImageOverlay && metadata?.titleLabel && (
                 <div className="image-overlay-title">{metadata.titleLabel}</div>
               )}
             </a>

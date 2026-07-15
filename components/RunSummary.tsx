@@ -27,6 +27,21 @@ function getDistanceBucketIndex(distanceMiles: number | null): number {
   return 0;
 }
 
+function formatSeconds(value: number | null): string {
+  if (!Number.isFinite(value) || value == null) return "-";
+
+  const total = Math.max(0, Math.round(value));
+  const hours = Math.floor(total / 3600);
+  const minutes = Math.floor((total % 3600) / 60);
+  const seconds = total % 60;
+
+  if (hours > 0) {
+    return `${hours}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+  }
+
+  return `${minutes}:${String(seconds).padStart(2, "0")}`;
+}
+
 type RunSummaryProps = {
   images: ImageListItem[];
 };
@@ -136,6 +151,36 @@ export default function RunSummary({ images }: RunSummaryProps) {
   const total = filteredImages.length;
   const maxCount = Math.max(...counts, 1);
 
+  const metricRows = filteredImages
+    .map((image) => image.metadata?.metrics)
+    .filter(
+      (metrics): metrics is NonNullable<ImageListItem["metadata"]>["metrics"] =>
+        Boolean(metrics),
+    );
+
+  const availableMetricActivities = metricRows.length;
+  const avgHeartRates = metricRows
+    .map((metrics) => metrics?.avgHeartRate)
+    .filter((value): value is number => Number.isFinite(value));
+  const maxHeartRates = metricRows
+    .map((metrics) => metrics?.maxHeartRate)
+    .filter((value): value is number => Number.isFinite(value));
+  const bestMileSeconds = metricRows
+    .map((metrics) => metrics?.bestMileSeconds)
+    .filter((value): value is number => Number.isFinite(value));
+
+  const scopedAverageHeartRate =
+    avgHeartRates.length > 0
+      ? Math.round(
+          avgHeartRates.reduce((sum, value) => sum + value, 0) /
+            avgHeartRates.length,
+        )
+      : null;
+  const scopedMaxHeartRate =
+    maxHeartRates.length > 0 ? Math.max(...maxHeartRates) : null;
+  const scopedBestMileSeconds =
+    bestMileSeconds.length > 0 ? Math.min(...bestMileSeconds) : null;
+
   const scopeLabel =
     activeYear === "ALL"
       ? "All years"
@@ -214,6 +259,21 @@ export default function RunSummary({ images }: RunSummaryProps) {
         Scope: <strong>{scopeLabel}</strong> ({total} run
         {total === 1 ? "" : "s"})
       </p>
+
+      <div className="run-summary-metrics" aria-label="FIT metrics summary">
+        <span className="run-summary-metric-chip">
+          FIT metrics: <strong>{availableMetricActivities}</strong>/{total}
+        </span>
+        <span className="run-summary-metric-chip">
+          Avg HR: <strong>{scopedAverageHeartRate ?? "-"}</strong>
+        </span>
+        <span className="run-summary-metric-chip">
+          Max HR: <strong>{scopedMaxHeartRate ?? "-"}</strong>
+        </span>
+        <span className="run-summary-metric-chip">
+          Best mile: <strong>{formatSeconds(scopedBestMileSeconds)}</strong>
+        </span>
+      </div>
 
       <div className="run-summary">
         {buckets.map(({ label, range, color, count }) => {

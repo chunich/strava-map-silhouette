@@ -14,7 +14,7 @@ Option 1 migration baseline: monolithic Next.js app (frontend + backend in one c
 - React 18
 - TypeScript
 - Tailwind CSS
-- Existing Node modules for parsing, Strava, and image generation (`sharp`, TCX/GPX tooling)
+- Existing Node modules for parsing, Strava, and image generation (`sharp`, GPX/TCX/FIT tooling)
 
 ## Scripts
 
@@ -61,3 +61,4 @@ Open `http://localhost:3000`.
 ## Notes
 
 - The legacy Express `server.js` runtime has been retired.
+- FIT parsing uses `fit-file-parser` and requires Node.js 20+.

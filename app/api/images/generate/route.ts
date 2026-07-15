@@ -28,7 +28,8 @@ export async function POST() {
       .filter(
         (file) =>
           file.toLowerCase().endsWith(".gpx") ||
-          file.toLowerCase().endsWith(".tcx"),
+          file.toLowerCase().endsWith(".tcx") ||
+          file.toLowerCase().endsWith(".fit"),
       )
       .sort()
       .map((file) => path.join(config.paths.sourceDir, file));
@@ -36,14 +37,14 @@ export async function POST() {
     if (gpxFiles.length === 0) {
       return NextResponse.json(
         {
-          error: "No GPX/TCX files found",
+          error: "No GPX/TCX/FIT files found",
           directory: config.paths.sourceDir,
         },
         { status: 404 },
       );
     }
 
-    console.log(`Found ${gpxFiles.length} GPX/TCX file(s)`);
+    console.log(`Found ${gpxFiles.length} GPX/TCX/FIT file(s)`);
 
     const options = {
       filterType: config.filter.type,

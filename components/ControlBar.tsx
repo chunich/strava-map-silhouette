@@ -1,5 +1,6 @@
 type ControlBarProps = {
   hideFilenames: boolean;
+  showImageOverlay: boolean;
   imageColumns: number;
   loadingAction: string | null;
   onRefresh: () => void;
@@ -8,11 +9,13 @@ type ControlBarProps = {
   onStitch: () => void;
   onLoadStrava: () => void;
   onToggleFilenames: (checked: boolean) => void;
+  onToggleImageOverlay: (checked: boolean) => void;
   onImageColumnsChange: (nextValue: number) => void;
 };
 
 export default function ControlBar({
   hideFilenames,
+  showImageOverlay,
   imageColumns,
   loadingAction,
   onRefresh,
@@ -21,12 +24,13 @@ export default function ControlBar({
   onStitch,
   onLoadStrava,
   onToggleFilenames,
+  onToggleImageOverlay,
   onImageColumnsChange,
 }: ControlBarProps) {
   const busy = Boolean(loadingAction);
   const refreshLabel =
     loadingAction === "refresh" ? "Refreshing..." : "Refresh";
-  const gpxLabel = loadingAction === "gpx" ? "Generating..." : "GPX/TCX";
+  const gpxLabel = loadingAction === "gpx" ? "Generating..." : "GPX/TCX/FIT";
   const stravaLabel = loadingAction === "strava" ? "Generating..." : "Strava";
   const stitchLabel = loadingAction === "stitch" ? "Stitching..." : "Stitch";
   const loadStravaLabel =
@@ -57,6 +61,15 @@ export default function ControlBar({
           onChange={(event) => onToggleFilenames(event.target.checked)}
         />
         Hide filenames
+      </label>
+
+      <label className="inline-control">
+        <input
+          type="checkbox"
+          checked={showImageOverlay}
+          onChange={(event) => onToggleImageOverlay(event.target.checked)}
+        />
+        Show title overlay
       </label>
 
       <label className="inline-control" htmlFor="image-cols">

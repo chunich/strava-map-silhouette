@@ -18,6 +18,16 @@ export type HealthResponse = {
 
 export type ImageMetadata = {
   titleLabel?: string;
+  metrics?: {
+    activityTime?: number | null;
+    elapsedTime?: number | null;
+    totalTime?: number | null;
+    avgHeartRate?: number | null;
+    maxHeartRate?: number | null;
+    totalAscent?: number | null;
+    totalDescent?: number | null;
+    bestMileSeconds?: number | null;
+  };
 };
 
 export type ImageListItem = {

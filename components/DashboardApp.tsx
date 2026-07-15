@@ -43,6 +43,7 @@ export default function DashboardApp() {
   const [imageError, setImageError] = useState<string | null>(null);
   const [activitiesError, setActivitiesError] = useState<string | null>(null);
   const [hideFilenames, setHideFilenames] = useState(false);
+  const [showImageOverlay, setShowImageOverlay] = useState(true);
   const [imageColumns, setImageColumns] = useState(5);
   const [showRunningOnly, setShowRunningOnly] = useState(false);
   const [openSection, setOpenSection] = useState<OpenSection>("images");
@@ -182,6 +183,7 @@ export default function DashboardApp() {
       <DashboardHeader healthStatus={healthStatus} />
       <ControlBar
         hideFilenames={hideFilenames}
+        showImageOverlay={showImageOverlay}
         imageColumns={imageColumns}
         loadingAction={loadingAction}
         onRefresh={() => {
@@ -200,6 +202,7 @@ export default function DashboardApp() {
           void loadStravaActivities();
         }}
         onToggleFilenames={setHideFilenames}
+        onToggleImageOverlay={setShowImageOverlay}
         onImageColumnsChange={setImageColumns}
       />
 
@@ -240,6 +243,7 @@ export default function DashboardApp() {
             <ImageGallery
               images={images}
               hideFilenames={hideFilenames}
+              showImageOverlay={showImageOverlay}
               imageColumns={imageColumns}
               isLoading={imagesLoading}
               error={imageError}

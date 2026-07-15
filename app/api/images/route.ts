@@ -2,6 +2,46 @@ import { access, mkdir, readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import { NextResponse } from "next/server";
 import config from "@/config";
+import type { ImageMetadata } from "@/lib/api-types";
+
+function parseMetadata(content: string): ImageMetadata {
+  const parsed = JSON.parse(content) as Record<string, unknown>;
+  const metadata: ImageMetadata = {};
+
+  if (typeof parsed.titleLabel === "string") {
+    metadata.titleLabel = parsed.titleLabel;
+  }
+
+  if (
+    typeof parsed.metrics === "object" &&
+    parsed.metrics !== null &&
+    !Array.isArray(parsed.metrics)
+  ) {
+    const metrics = parsed.metrics as Record<string, unknown>;
+    metadata.metrics = {
+      activityTime:
+        typeof metrics.activityTime === "number" ? metrics.activityTime : null,
+      elapsedTime:
+        typeof metrics.elapsedTime === "number" ? metrics.elapsedTime : null,
+      totalTime:
+        typeof metrics.totalTime === "number" ? metrics.totalTime : null,
+      avgHeartRate:
+        typeof metrics.avgHeartRate === "number" ? metrics.avgHeartRate : null,
+      maxHeartRate:
+        typeof metrics.maxHeartRate === "number" ? metrics.maxHeartRate : null,
+      totalAscent:
+        typeof metrics.totalAscent === "number" ? metrics.totalAscent : null,
+      totalDescent:
+        typeof metrics.totalDescent === "number" ? metrics.totalDescent : null,
+      bestMileSeconds:
+        typeof metrics.bestMileSeconds === "number"
+          ? metrics.bestMileSeconds
+          : null,
+    };
+  }
+
+  return metadata;
+}
 
 /**
  * GET /images
@@ -30,15 +70,16 @@ export async function GET() {
     const images = await Promise.all(
       svgFiles.map(async (filename) => {
         const metadataFilename = filename.replace(/\.svg$/i, ".json");
-        const metadataPath = path.join(config.paths.outputDir, metadataFilename);
+        const metadataPath = path.join(
+          config.paths.outputDir,
+          metadataFilename,
+        );
 
         try {
           const metadataContent = await readFile(metadataPath, "utf-8");
           return {
             filename,
-            metadata: JSON.parse(metadataContent) as {
-              titleLabel?: string;
-            },
+            metadata: parseMetadata(metadataContent),
           };
         } catch {
           return { filename };

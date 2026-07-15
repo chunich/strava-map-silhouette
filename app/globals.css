@@ -464,6 +464,26 @@ a {
   font-weight: 700;
 }
 
+.run-summary-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin: 0 0 0.75rem;
+}
+
+.run-summary-metric-chip {
+  background: #1f2a38;
+  border: solid 1px #32445e;
+  border-radius: 999px;
+  color: #adc2db;
+  font-size: 0.74rem;
+  padding: 0.22rem 0.58rem;
+}
+
+.run-summary-metric-chip strong {
+  color: #eef5ff;
+}
+
 .run-summary-empty {
   color: #9fb0c8;
   margin: 0.25rem 0 0;
