@@ -42,6 +42,13 @@ function getDatePartsFromFilename(
   return { year, month };
 }
 
+function formatSeconds(value: number): string {
+  const total = Math.max(0, Math.round(value));
+  const minutes = Math.floor(total / 60);
+  const seconds = total % 60;
+  return `${minutes}:${String(seconds).padStart(2, "0")}`;
+}
+
 export default function ImageGallery({
   images,
   activeYear,
@@ -123,9 +130,12 @@ export default function ImageGallery({
     <div
       ref={gridRef}
       className="image-grid"
-      style={{
-        gridTemplateColumns: `repeat(${imageColumns}, minmax(0, 1fr))`,
-      }}
+      style={
+        {
+          gridTemplateColumns: `repeat(${imageColumns}, minmax(0, 1fr))`,
+          "--cols": imageColumns,
+        } as React.CSSProperties
+      }
     >
       {filteredImages.map(({ filename, metadata }) => {
         const category = getDistanceCategory(metadata);
@@ -177,7 +187,46 @@ export default function ImageGallery({
                 }}
               />
               {showImageOverlay && metadata?.titleLabel && (
-                <div className="image-overlay-title">{metadata.titleLabel}</div>
+                <div className="image-overlay-title">
+                  <span className="overlay-label">
+                    {metadata.titleLabel}
+                    <span className="overlay-label-unit"> mi</span>
+                  </span>
+                  {imageColumns <= 7 &&
+                    metadata.metrics &&
+                    (() => {
+                      const distMiles = Number.parseFloat(
+                        metadata.titleLabel ?? "",
+                      );
+                      const actTime = metadata.metrics.activityTime;
+                      const avgPaceSeconds =
+                        Number.isFinite(actTime) &&
+                        Number.isFinite(distMiles) &&
+                        distMiles > 0
+                          ? (actTime as number) / distMiles
+                          : null;
+                      return (
+                        <div className="overlay-metrics">
+                          {avgPaceSeconds != null && (
+                            <span>⏱ {formatSeconds(avgPaceSeconds)}/mi</span>
+                          )}
+                          {metadata.metrics.avgHeartRate != null && (
+                            <span>♥ {metadata.metrics.avgHeartRate} avg</span>
+                          )}
+                          {metadata.metrics.maxHeartRate != null && (
+                            <span>♥ {metadata.metrics.maxHeartRate} max</span>
+                          )}
+                          {metadata.metrics.bestMileSeconds != null && (
+                            <span>
+                              🏅{" "}
+                              {formatSeconds(metadata.metrics.bestMileSeconds)}{" "}
+                              best
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })()}
+                </div>
               )}
             </a>
             {!hideFilenames ? (
