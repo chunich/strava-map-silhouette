@@ -25,6 +25,8 @@ type StatusState = {
 };
 
 type OpenSection = "images" | "activities" | null;
+type YearTab = "ALL" | number;
+type MonthTab = "ALL" | number;
 
 export default function DashboardApp() {
   const { healthStatus, refreshHealth } = useHealthStatus();
@@ -47,6 +49,8 @@ export default function DashboardApp() {
   const [imageColumns, setImageColumns] = useState(5);
   const [showRunningOnly, setShowRunningOnly] = useState(false);
   const [openSection, setOpenSection] = useState<OpenSection>("images");
+  const [activeYear, setActiveYear] = useState<YearTab>("ALL");
+  const [activeMonth, setActiveMonth] = useState<MonthTab>("ALL");
   const visibleActivityCount = showRunningOnly
     ? activities.filter((activity) => isRunningActivity(activity)).length
     : activities.length;
@@ -215,7 +219,16 @@ export default function DashboardApp() {
         />
       ) : null}
 
-      <RunSummary images={images} />
+      <RunSummary
+        images={images}
+        activeYear={activeYear}
+        activeMonth={activeMonth}
+        onYearChange={(year) => {
+          setActiveYear(year);
+          setActiveMonth("ALL");
+        }}
+        onMonthChange={setActiveMonth}
+      />
 
       <section className="dashboard-section">
         <h2 className="accordion-heading">
@@ -242,6 +255,8 @@ export default function DashboardApp() {
           <div className="accordion-panel-content">
             <ImageGallery
               images={images}
+              activeYear={activeYear}
+              activeMonth={activeMonth}
               hideFilenames={hideFilenames}
               showImageOverlay={showImageOverlay}
               imageColumns={imageColumns}

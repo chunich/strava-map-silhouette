@@ -1,10 +1,12 @@
 "use client";
 
-import { useLayoutEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef } from "react";
 import type { ImageListItem } from "@/lib/api-types";
 
 type ImageGalleryProps = {
   images: ImageListItem[];
+  activeYear: "ALL" | number;
+  activeMonth: "ALL" | number;
   hideFilenames: boolean;
   showImageOverlay: boolean;
   imageColumns: number;
@@ -27,17 +29,47 @@ function getDistanceCategory(metadata?: {
   return 0;
 }
 
+function getDatePartsFromFilename(
+  filename: string,
+): { year: number; month: number } | null {
+  const match = filename.match(/^(\d{4})-(\d{2})-(\d{2})_/);
+  if (!match) return null;
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  if (!Number.isInteger(year) || month < 1 || month > 12) return null;
+
+  return { year, month };
+}
+
 export default function ImageGallery({
   images,
+  activeYear,
+  activeMonth,
   hideFilenames,
   showImageOverlay,
   imageColumns,
   isLoading = false,
   error = null,
 }: ImageGalleryProps) {
-  const [hoveredCategory, setHoveredCategory] = useState<number | null>(null);
   const cardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const prevRects = useRef<Map<string, DOMRect>>(new Map());
+  const hoveredCategoryRef = useRef<number | null>(null);
+  const gridRef = useRef<HTMLDivElement>(null);
+
+  // Filter images based on selected year/month
+  const filteredImages = images.filter((image) => {
+    if (activeYear === "ALL") return true;
+
+    const parts = getDatePartsFromFilename(image.filename);
+    if (!parts) return false;
+
+    if (activeMonth === "ALL") {
+      return parts.year === activeYear;
+    }
+
+    return parts.year === activeYear && parts.month === activeMonth;
+  });
 
   useLayoutEffect(() => {
     const nextRects = new Map<string, DOMRect>();
@@ -69,7 +101,7 @@ export default function ImageGallery({
     }
 
     prevRects.current = nextRects;
-  }, [images, imageColumns, hideFilenames, showImageOverlay]);
+  }, [filteredImages, imageColumns, hideFilenames, showImageOverlay]);
 
   if (isLoading) {
     return <p className="empty-state loading-pulse">Loading images...</p>;
@@ -79,31 +111,29 @@ export default function ImageGallery({
     return <p className="empty-state section-error">{error}</p>;
   }
 
-  if (images.length === 0) {
+  if (filteredImages.length === 0) {
     return (
       <p className="empty-state">
-        No images generated yet. Use GPX/TCX or Strava to generate.
+        No images generated yet. Use GPX/TCX/FIT or Strava to generate.
       </p>
     );
   }
 
   return (
     <div
+      ref={gridRef}
       className="image-grid"
       style={{
         gridTemplateColumns: `repeat(${imageColumns}, minmax(0, 1fr))`,
       }}
     >
-      {images.map(({ filename, metadata }) => {
+      {filteredImages.map(({ filename, metadata }) => {
         const category = getDistanceCategory(metadata);
-        const isCategoryMatch =
-          hoveredCategory !== null && category === hoveredCategory;
-        const isDimmed =
-          hoveredCategory !== null && category !== hoveredCategory;
 
         return (
           <div
             key={filename}
+            data-category={category}
             ref={(element) => {
               if (element) {
                 cardRefs.current.set(filename, element);
@@ -111,12 +141,14 @@ export default function ImageGallery({
                 cardRefs.current.delete(filename);
               }
             }}
-            className={`image-card ${isCategoryMatch ? "is-category-match" : ""} ${isDimmed ? "is-dim" : ""}`}
+            className="image-card"
             onMouseEnter={() => {
-              setHoveredCategory(category);
+              hoveredCategoryRef.current = category;
+              updateCardStyles();
             }}
             onMouseLeave={() => {
-              setHoveredCategory(null);
+              hoveredCategoryRef.current = null;
+              updateCardStyles();
             }}
           >
             <a
@@ -126,10 +158,12 @@ export default function ImageGallery({
               rel="noreferrer"
               aria-label={`Open ${filename}`}
               onFocus={() => {
-                setHoveredCategory(category);
+                hoveredCategoryRef.current = category;
+                updateCardStyles();
               }}
               onBlur={() => {
-                setHoveredCategory(null);
+                hoveredCategoryRef.current = null;
+                updateCardStyles();
               }}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -156,4 +190,21 @@ export default function ImageGallery({
       })}
     </div>
   );
+
+  function updateCardStyles() {
+    const hovered = hoveredCategoryRef.current;
+    if (!gridRef.current) return;
+
+    const cards = gridRef.current.querySelectorAll(".image-card");
+    cards.forEach((card) => {
+      const dataCategory = card.getAttribute("data-category");
+      const category = dataCategory ? Number.parseInt(dataCategory, 10) : null;
+
+      card.classList.toggle(
+        "is-category-match",
+        hovered !== null && category === hovered,
+      );
+      card.classList.toggle("is-dim", hovered !== null && category !== hovered);
+    });
+  }
 }

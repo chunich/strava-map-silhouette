@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import type { ImageListItem } from "@/lib/api-types";
 
 type Bucket = {
@@ -44,6 +44,10 @@ function formatSeconds(value: number | null): string {
 
 type RunSummaryProps = {
   images: ImageListItem[];
+  activeYear: YearTab;
+  activeMonth: MonthTab;
+  onYearChange: (year: YearTab) => void;
+  onMonthChange: (month: MonthTab) => void;
 };
 
 const MONTHS = [
@@ -77,10 +81,13 @@ function getDatePartsFromFilename(
   return { year, month };
 }
 
-export default function RunSummary({ images }: RunSummaryProps) {
-  const [activeYear, setActiveYear] = useState<YearTab>("ALL");
-  const [activeMonth, setActiveMonth] = useState<MonthTab>("ALL");
-
+export default function RunSummary({
+  images,
+  activeYear,
+  activeMonth,
+  onYearChange,
+  onMonthChange,
+}: RunSummaryProps) {
   const yearTabs = useMemo(() => {
     const years = new Set<number>();
     for (const image of images) {
@@ -193,67 +200,47 @@ export default function RunSummary({ images }: RunSummaryProps) {
       className="run-summary-section"
       aria-label="Run summary by distance, year, and month"
     >
-      <div
-        className="run-summary-tabs run-summary-tabs-year"
-        role="tablist"
-        aria-label="Run summary year tabs"
-      >
+      <div className="run-summary-filter-chips">
         {yearTabs.map((yearTab) => {
-          const selected = yearTab === activeYear;
+          const isSelected = yearTab === activeYear;
           const yearKey = String(yearTab);
+          const count = yearCounts[yearKey] || 0;
 
           return (
-            <button
-              key={yearKey}
-              type="button"
-              role="tab"
-              className={`run-summary-tab ${selected ? "is-active" : ""}`}
-              aria-selected={selected}
-              onClick={() => {
-                setActiveYear(yearTab);
-                setActiveMonth("ALL");
-              }}
-            >
-              {yearTab} ({yearCounts[yearKey] || 0})
-            </button>
+            <div key={yearKey} className="run-summary-chip-group">
+              <button
+                type="button"
+                className={`run-summary-chip ${isSelected ? "active" : ""}`}
+                onClick={() => onYearChange(yearTab)}
+              >
+                {yearTab} <span className="chip-count">({count})</span>
+              </button>
+
+              {isSelected && yearTab !== "ALL" && (
+                <div className="run-summary-month-chips">
+                  {MONTHS.map((monthName, index) => {
+                    const month = index + 1;
+                    const isMonthSelected = activeMonth === month;
+                    const monthCount = monthCounts[month] || 0;
+
+                    return (
+                      <button
+                        key={`${yearTab}-${monthName}`}
+                        type="button"
+                        className={`run-summary-chip month-chip ${isMonthSelected ? "active" : ""}`}
+                        onClick={() => onMonthChange(month)}
+                      >
+                        {monthName}{" "}
+                        <span className="chip-count">({monthCount})</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           );
         })}
       </div>
-
-      {activeYear !== "ALL" ? (
-        <div
-          className="run-summary-tabs run-summary-tabs-month"
-          role="tablist"
-          aria-label="Run summary month tabs"
-        >
-          <button
-            type="button"
-            role="tab"
-            className={`run-summary-tab ${activeMonth === "ALL" ? "is-active" : ""}`}
-            aria-selected={activeMonth === "ALL"}
-            onClick={() => setActiveMonth("ALL")}
-          >
-            ALL {activeYear} ({monthCounts[0]})
-          </button>
-          {MONTHS.map((monthName, index) => {
-            const month = index + 1;
-            const selected = activeMonth === month;
-
-            return (
-              <button
-                key={`${activeYear}-${monthName}`}
-                type="button"
-                role="tab"
-                className={`run-summary-tab ${selected ? "is-active" : ""}`}
-                aria-selected={selected}
-                onClick={() => setActiveMonth(month)}
-              >
-                {monthName} {activeYear} ({monthCounts[month]})
-              </button>
-            );
-          })}
-        </div>
-      ) : null}
 
       <p className="run-summary-scope">
         Scope: <strong>{scopeLabel}</strong> ({total} run

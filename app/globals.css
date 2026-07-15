@@ -410,41 +410,66 @@ a {
   margin: 1rem 0 0.5rem;
 }
 
-.run-summary-tabs {
+.run-summary-filter-chips {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
+  flex-direction: column;
+  gap: 0.5rem;
   margin-bottom: 0.75rem;
 }
 
-.run-summary-tabs-year {
-  margin-bottom: 0.45rem;
+.run-summary-chip-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: flex-start;
 }
 
-.run-summary-tabs-month {
-  margin-bottom: 0.8rem;
-}
-
-.run-summary-tab {
+.run-summary-chip {
   background: #212a37;
   border: solid 1px #3b4758;
   border-radius: 999px;
   color: #b8c6d8;
   cursor: pointer;
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   font-weight: 600;
-  padding: 0.28rem 0.65rem;
+  padding: 0.24rem 0.48rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28rem;
+  transition: all 0.15s ease;
 }
 
-.run-summary-tab:hover {
+.run-summary-chip:hover {
   border-color: #5f738f;
   color: #d5deeb;
 }
 
-.run-summary-tab.is-active {
+.run-summary-chip.active {
   background: #32435c;
   border-color: #86a6ce;
   color: #f3f7fd;
+}
+
+.chip-count {
+  opacity: 0.85;
+  font-size: 0.9em;
+}
+
+.run-summary-chip.active .chip-count {
+  opacity: 0.95;
+}
+
+.run-summary-month-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.28rem;
+}
+
+.run-summary-month-chips .run-summary-chip {
+  background: #1a2333;
+  border-color: #2d3a4d;
+  font-size: 0.7rem;
+  padding: 0.2rem 0.4rem;
 }
 
 .run-summary {
