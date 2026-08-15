@@ -156,7 +156,6 @@ export default function RunSummary({
 
   const buckets: Bucket[] = BUCKETS.map((b, i) => ({ ...b, count: counts[i] }));
   const total = filteredImages.length;
-  const maxCount = Math.max(...counts, 1);
 
   const metricRows = filteredImages
     .map((image) => image.metadata?.metrics)
@@ -222,21 +221,21 @@ export default function RunSummary({
                     monthName,
                     month: index + 1,
                   })).map(({ monthName, month }) => {
-                      const isMonthSelected = activeMonth === month;
-                      const monthCount = monthCounts[month] || 0;
+                    const isMonthSelected = activeMonth === month;
+                    const monthCount = monthCounts[month] || 0;
 
-                      return (
-                        <button
-                          key={`${yearTab}-${monthName}`}
-                          type="button"
-                          className={`run-summary-chip month-chip ${isMonthSelected ? "active" : ""}`}
-                          onClick={() => onMonthChange(month)}
-                        >
-                          {monthName}{" "}
-                          <span className="chip-count">({monthCount})</span>
-                        </button>
-                      );
-                    })}
+                    return (
+                      <button
+                        key={`${yearTab}-${monthName}`}
+                        type="button"
+                        className={`run-summary-chip month-chip ${isMonthSelected ? "active" : ""}`}
+                        onClick={() => onMonthChange(month)}
+                      >
+                        {monthName}{" "}
+                        <span className="chip-count">({monthCount})</span>
+                      </button>
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -265,34 +264,43 @@ export default function RunSummary({
       </div>
 
       <div className="run-summary">
-        {buckets.map(({ label, range, color, count }) => {
-          const pct = (count / maxCount) * 100;
-          const percentValue =
-            total > 0 ? Math.round((count / total) * 100) : 0;
+        <div className="run-summary-bar-container">
+          <div className="run-summary-bar-wrapper">
+            {buckets.map(({ label, color, count }) => (
+              <div
+                key={label}
+                className="run-summary-bar-segment"
+                style={{
+                  flex: count,
+                  background: color,
+                  minWidth: count > 0 ? "2px" : "0",
+                }}
+                title={`${label}: ${count}`}
+              />
+            ))}
+          </div>
+        </div>
 
-          return (
-            <div key={label} className="run-summary-row">
-              <div className="run-summary-label">
+        <div className="run-summary-legend">
+          {buckets.map(({ label, range, color, count }) => {
+            const percentValue =
+              total > 0 ? Math.round((count / total) * 100) : 0;
+
+            return (
+              <div key={label} className="run-summary-legend-item">
                 <span
-                  className="run-summary-dot"
+                  className="run-summary-legend-dot"
                   style={{ background: color }}
                 />
-                <span className="run-summary-name">{label}</span>
-                <span className="run-summary-range">{range}</span>
+                <span className="run-summary-legend-label">{label}</span>
+                <span className="run-summary-legend-range">{range}</span>
+                <span className="run-summary-legend-count">
+                  {count} ({percentValue}%)
+                </span>
               </div>
-              <div className="run-summary-bar-wrap">
-                <div
-                  className="run-summary-bar"
-                  style={{ width: `${pct}%`, background: color }}
-                />
-              </div>
-              <span className="run-summary-count">
-                {count}
-                <span className="run-summary-pct"> ({percentValue}%)</span>
-              </span>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
     </section>
   );
