@@ -218,23 +218,25 @@ export default function RunSummary({
 
               {isSelected && yearTab !== "ALL" && (
                 <div className="run-summary-month-chips">
-                  {MONTHS.map((monthName, index) => {
-                    const month = index + 1;
-                    const isMonthSelected = activeMonth === month;
-                    const monthCount = monthCounts[month] || 0;
+                  {MONTHS.map((monthName, index) => ({
+                    monthName,
+                    month: index + 1,
+                  })).map(({ monthName, month }) => {
+                      const isMonthSelected = activeMonth === month;
+                      const monthCount = monthCounts[month] || 0;
 
-                    return (
-                      <button
-                        key={`${yearTab}-${monthName}`}
-                        type="button"
-                        className={`run-summary-chip month-chip ${isMonthSelected ? "active" : ""}`}
-                        onClick={() => onMonthChange(month)}
-                      >
-                        {monthName}{" "}
-                        <span className="chip-count">({monthCount})</span>
-                      </button>
-                    );
-                  })}
+                      return (
+                        <button
+                          key={`${yearTab}-${monthName}`}
+                          type="button"
+                          className={`run-summary-chip month-chip ${isMonthSelected ? "active" : ""}`}
+                          onClick={() => onMonthChange(month)}
+                        >
+                          {monthName}{" "}
+                          <span className="chip-count">({monthCount})</span>
+                        </button>
+                      );
+                    })}
                 </div>
               )}
             </div>

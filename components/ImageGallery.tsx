@@ -1,6 +1,6 @@
 "use client";
 
-import { useLayoutEffect, useRef } from "react";
+import { useLayoutEffect, useMemo, useRef } from "react";
 import type { ImageListItem } from "@/lib/api-types";
 
 type ImageGalleryProps = {
@@ -64,19 +64,25 @@ export default function ImageGallery({
   const hoveredCategoryRef = useRef<number | null>(null);
   const gridRef = useRef<HTMLDivElement>(null);
 
-  // Filter images based on selected year/month
-  const filteredImages = images.filter((image) => {
-    if (activeYear === "ALL") return true;
+  // Filter images based on selected year/month, then sort newest first.
+  const filteredImages = useMemo(() => {
+    const scopedImages = images.filter((image) => {
+      if (activeYear === "ALL") return true;
 
-    const parts = getDatePartsFromFilename(image.filename);
-    if (!parts) return false;
+      const parts = getDatePartsFromFilename(image.filename);
+      if (!parts) return false;
 
-    if (activeMonth === "ALL") {
-      return parts.year === activeYear;
-    }
+      if (activeMonth === "ALL") {
+        return parts.year === activeYear;
+      }
 
-    return parts.year === activeYear && parts.month === activeMonth;
-  });
+      return parts.year === activeYear && parts.month === activeMonth;
+    });
+
+    return [...scopedImages].sort((a, b) =>
+      b.filename.localeCompare(a.filename),
+    );
+  }, [images, activeYear, activeMonth]);
 
   useLayoutEffect(() => {
     const nextRects = new Map<string, DOMRect>();

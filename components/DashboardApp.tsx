@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import ControlBar from "@/components/ControlBar";
 import DashboardHeader from "@/components/DashboardHeader";
 import ImageGallery from "@/components/ImageGallery";
@@ -28,6 +28,51 @@ type OpenSection = "images" | "activities" | null;
 type YearTab = "ALL" | number;
 type MonthTab = "ALL" | number;
 
+function getDatePartsFromFilename(
+  filename: string,
+): { year: number; month: number } | null {
+  const match = filename.match(/^(\d{4})-(\d{2})-(\d{2})_/);
+  if (!match) return null;
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  if (!Number.isInteger(year) || month < 1 || month > 12) return null;
+
+  return { year, month };
+}
+
+function getDefaultScopeFromImages(images: Array<{ filename: string }>): {
+  year: number;
+  month: number;
+} | null {
+  if (images.length === 0) return null;
+
+  const currentYear = new Date().getFullYear();
+  const currentMonth = new Date().getMonth() + 1;
+
+  const byYear = new Map<number, Set<number>>();
+  for (const image of images) {
+    const parts = getDatePartsFromFilename(image.filename);
+    if (!parts) continue;
+
+    const months = byYear.get(parts.year) ?? new Set<number>();
+    months.add(parts.month);
+    byYear.set(parts.year, months);
+  }
+
+  if (byYear.size === 0) return null;
+
+  if (byYear.get(currentYear)?.has(currentMonth)) {
+    return { year: currentYear, month: currentMonth };
+  }
+
+  const yearsDesc = Array.from(byYear.keys()).sort((a, b) => b - a);
+  const fallbackYear = yearsDesc[0];
+  const fallbackMonth = Math.max(...Array.from(byYear.get(fallbackYear) ?? []));
+
+  return { year: fallbackYear, month: fallbackMonth };
+}
+
 export default function DashboardApp() {
   const { healthStatus, refreshHealth } = useHealthStatus();
   const {
@@ -49,8 +94,13 @@ export default function DashboardApp() {
   const [imageColumns, setImageColumns] = useState(5);
   const [showRunningOnly, setShowRunningOnly] = useState(false);
   const [openSection, setOpenSection] = useState<OpenSection>("images");
-  const [activeYear, setActiveYear] = useState<YearTab>("ALL");
-  const [activeMonth, setActiveMonth] = useState<MonthTab>("ALL");
+  const [activeYear, setActiveYear] = useState<YearTab>(() =>
+    new Date().getFullYear(),
+  );
+  const [activeMonth, setActiveMonth] = useState<MonthTab>(
+    () => new Date().getMonth() + 1,
+  );
+  const didInitDateScope = useRef(false);
   const visibleActivityCount = showRunningOnly
     ? activities.filter((activity) => isRunningActivity(activity)).length
     : activities.length;
@@ -65,6 +115,14 @@ export default function DashboardApp() {
     setImageError(null);
     try {
       const nextImages = await reloadImages();
+      if (!didInitDateScope.current) {
+        const defaultScope = getDefaultScopeFromImages(nextImages);
+        if (defaultScope) {
+          setActiveYear(defaultScope.year);
+          setActiveMonth(defaultScope.month);
+        }
+        didInitDateScope.current = true;
+      }
       setStatus({
         tone: "info",
         message: `Loaded ${nextImages.length} image(s).`,
