@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import ControlBar from "@/components/ControlBar";
-import DashboardHeader from "@/components/DashboardHeader";
 import ImageGallery from "@/components/ImageGallery";
 import RunSummary from "@/components/RunSummary";
 import StatusBanner from "@/components/StatusBanner";
@@ -91,7 +90,7 @@ export default function DashboardApp() {
   const [activitiesError, setActivitiesError] = useState<string | null>(null);
   const [hideFilenames, setHideFilenames] = useState(false);
   const [showImageOverlay, setShowImageOverlay] = useState(true);
-  const [imageColumns, setImageColumns] = useState(5);
+  const [imageColumns, setImageColumns] = useState(10);
   const [showRunningOnly, setShowRunningOnly] = useState(false);
   const [openSection, setOpenSection] = useState<OpenSection>("images");
   const [activeYear, setActiveYear] = useState<YearTab>(() =>
@@ -101,6 +100,9 @@ export default function DashboardApp() {
     () => new Date().getMonth() + 1,
   );
   const didInitDateScope = useRef(false);
+  const dismissStatus = useCallback(() => {
+    setStatus(null);
+  }, []);
   const visibleActivityCount = showRunningOnly
     ? activities.filter((activity) => isRunningActivity(activity)).length
     : activities.length;
@@ -242,8 +244,8 @@ export default function DashboardApp() {
 
   return (
     <main className="dashboard-wrap">
-      <DashboardHeader healthStatus={healthStatus} />
       <ControlBar
+        healthStatus={healthStatus}
         hideFilenames={hideFilenames}
         showImageOverlay={showImageOverlay}
         imageColumns={imageColumns}
@@ -273,7 +275,7 @@ export default function DashboardApp() {
           tone={status.tone}
           message={status.message}
           links={status.links}
-          onDismiss={() => setStatus(null)}
+          onDismiss={dismissStatus}
         />
       ) : null}
 

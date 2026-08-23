@@ -1,4 +1,9 @@
+"use client";
+
+import { useEffect } from "react";
 import type { StatusTone } from "@/lib/api-types";
+
+const TOAST_AUTO_DISMISS_MS = 10000;
 
 type StatusBannerProps = {
   tone: StatusTone;
@@ -13,6 +18,18 @@ export default function StatusBanner({
   links,
   onDismiss,
 }: StatusBannerProps) {
+  useEffect(() => {
+    if (!onDismiss) return;
+
+    const timeoutId = window.setTimeout(() => {
+      onDismiss();
+    }, TOAST_AUTO_DISMISS_MS);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [message, tone, links, onDismiss]);
+
   const toneClass =
     tone === "success"
       ? "status-success"

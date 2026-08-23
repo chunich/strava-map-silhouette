@@ -40,18 +40,6 @@ a {
   padding: 2rem;
 }
 
-.dashboard-header {
-  align-items: center;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  justify-content: space-between;
-}
-
-.dashboard-header h1 {
-  margin: 0;
-}
-
 .health-label {
   border-radius: 999px;
   font-size: 0.85rem;
@@ -123,10 +111,21 @@ a {
   width: 100px;
 }
 
+.control-bar-health {
+  margin-left: auto;
+}
+
 .status-banner {
-  border-radius: 8px;
-  margin: 1rem 0;
-  padding: 0.8rem 1rem;
+  border-radius: 10px;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
+  font-size: 0.78rem;
+  margin: 0;
+  max-width: min(28rem, calc(100vw - 1.5rem));
+  padding: 0.5rem 0.75rem;
+  position: fixed;
+  right: 1rem;
+  top: 1rem;
+  z-index: 1000;
 }
 
 .status-banner p {
@@ -244,7 +243,7 @@ a {
 }
 
 .status-banner-row {
-  align-items: flex-start;
+  align-items: center;
   display: flex;
   gap: 0.5rem;
   justify-content: space-between;
@@ -256,7 +255,7 @@ a {
 
 .status-dismiss {
   align-items: center;
-  align-self: center;
+  align-self: auto;
   background: transparent;
   border: none;
   color: inherit;
@@ -274,6 +273,15 @@ a {
 
 .status-dismiss:hover {
   opacity: 1;
+}
+
+@media (max-width: 640px) {
+  .status-banner {
+    left: 0.75rem;
+    max-width: none;
+    right: 0.75rem;
+    top: 0.75rem;
+  }
 }
 
 .image-grid {

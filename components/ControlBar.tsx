@@ -1,4 +1,5 @@
 type ControlBarProps = {
+  healthStatus: "checking" | "ok" | "error";
   hideFilenames: boolean;
   showImageOverlay: boolean;
   imageColumns: number;
@@ -14,6 +15,7 @@ type ControlBarProps = {
 };
 
 export default function ControlBar({
+  healthStatus,
   hideFilenames,
   showImageOverlay,
   imageColumns,
@@ -27,6 +29,12 @@ export default function ControlBar({
   onToggleImageOverlay,
   onImageColumnsChange,
 }: ControlBarProps) {
+  const healthText =
+    healthStatus === "ok"
+      ? "API: OK"
+      : healthStatus === "error"
+        ? "API: Error"
+        : "API: Checking...";
   const busy = Boolean(loadingAction);
   const refreshLabel =
     loadingAction === "refresh" ? "Refreshing..." : "Refresh";
@@ -84,6 +92,10 @@ export default function ControlBar({
           onChange={(event) => onImageColumnsChange(Number(event.target.value))}
         />
       </label>
+
+      <div className={`health-label health-${healthStatus} control-bar-health`}>
+        {healthText}
+      </div>
     </div>
   );
 }
