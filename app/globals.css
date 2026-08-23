@@ -461,6 +461,13 @@ a {
   margin-bottom: 0.75rem;
 }
 
+.run-summary-year-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: center;
+}
+
 .run-summary-chip-group {
   display: flex;
   flex-wrap: wrap;
@@ -507,6 +514,7 @@ a {
   display: flex;
   flex-wrap: wrap;
   gap: 0.28rem;
+  width: 100%;
 }
 
 .run-summary-month-chips .run-summary-chip {

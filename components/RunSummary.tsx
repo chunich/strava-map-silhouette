@@ -200,47 +200,47 @@ export default function RunSummary({
       aria-label="Run summary by distance, year, and month"
     >
       <div className="run-summary-filter-chips">
-        {yearTabs.map((yearTab) => {
-          const isSelected = yearTab === activeYear;
-          const yearKey = String(yearTab);
-          const count = yearCounts[yearKey] || 0;
+        <div className="run-summary-year-chips">
+          {yearTabs.map((yearTab) => {
+            const isSelected = yearTab === activeYear;
+            const yearKey = String(yearTab);
+            const count = yearCounts[yearKey] || 0;
 
-          return (
-            <div key={yearKey} className="run-summary-chip-group">
+            return (
               <button
+                key={yearKey}
                 type="button"
                 className={`run-summary-chip ${isSelected ? "active" : ""}`}
                 onClick={() => onYearChange(yearTab)}
               >
                 {yearTab} <span className="chip-count">({count})</span>
               </button>
+            );
+          })}
+        </div>
 
-              {isSelected && yearTab !== "ALL" && (
-                <div className="run-summary-month-chips">
-                  {MONTHS.map((monthName, index) => ({
-                    monthName,
-                    month: index + 1,
-                  })).map(({ monthName, month }) => {
-                    const isMonthSelected = activeMonth === month;
-                    const monthCount = monthCounts[month] || 0;
+        {activeYear !== "ALL" && (
+          <div className="run-summary-month-chips">
+            {MONTHS.map((monthName, index) => ({
+              monthName,
+              month: index + 1,
+            })).map(({ monthName, month }) => {
+              const isMonthSelected = activeMonth === month;
+              const monthCount = monthCounts[month] || 0;
 
-                    return (
-                      <button
-                        key={`${yearTab}-${monthName}`}
-                        type="button"
-                        className={`run-summary-chip month-chip ${isMonthSelected ? "active" : ""}`}
-                        onClick={() => onMonthChange(month)}
-                      >
-                        {monthName}{" "}
-                        <span className="chip-count">({monthCount})</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          );
-        })}
+              return (
+                <button
+                  key={`${activeYear}-${monthName}`}
+                  type="button"
+                  className={`run-summary-chip month-chip ${isMonthSelected ? "active" : ""}`}
+                  onClick={() => onMonthChange(month)}
+                >
+                  {monthName} <span className="chip-count">({monthCount})</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       <p className="run-summary-scope">

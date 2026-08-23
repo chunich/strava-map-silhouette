@@ -86,7 +86,7 @@ export default function ControlBar({
           id="image-cols"
           type="range"
           min={3}
-          max={12}
+          max={24}
           step={1}
           value={imageColumns}
           onChange={(event) => onImageColumnsChange(Number(event.target.value))}
