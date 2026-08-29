@@ -279,17 +279,6 @@ export default function DashboardApp() {
         />
       ) : null}
 
-      <RunSummary
-        images={images}
-        activeYear={activeYear}
-        activeMonth={activeMonth}
-        onYearChange={(year) => {
-          setActiveYear(year);
-          setActiveMonth("ALL");
-        }}
-        onMonthChange={setActiveMonth}
-      />
-
       <section className="dashboard-section">
         <h2 className="accordion-heading">
           <button
@@ -300,7 +289,7 @@ export default function DashboardApp() {
             onClick={() => toggleSection("images")}
           >
             <span>
-              Generated Images{images.length > 0 ? ` (${images.length})` : ""}
+              Run Gallery {images.length > 0 ? ` (${images.length})` : ""}
             </span>
             <span className="accordion-icon" aria-hidden="true">
               {openSection === "images" ? "-" : "+"}
@@ -326,6 +315,17 @@ export default function DashboardApp() {
           </div>
         </div>
       </section>
+
+      <RunSummary
+        images={images}
+        activeYear={activeYear}
+        activeMonth={activeMonth}
+        onYearChange={(year) => {
+          setActiveYear(year);
+          setActiveMonth("ALL");
+        }}
+        onMonthChange={setActiveMonth}
+      />
 
       <section className="dashboard-section">
         <h2 className="accordion-heading">

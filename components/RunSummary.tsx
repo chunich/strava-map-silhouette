@@ -1,25 +1,25 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import Image from "next/image";
 import type { ImageListItem } from "@/lib/api-types";
 
-type Bucket = {
+type DistanceBucketDef = {
   label: string;
   range: string;
   color: string;
-  count: number;
 };
 
-const BUCKETS: Omit<Bucket, "count">[] = [
+const DISTANCE_BUCKETS: DistanceBucketDef[] = [
   { label: "< 5K", range: "< 3.1 mi", color: "#e88ac4" },
-  { label: "5K – 10K", range: "3.1 – 6.2 mi", color: "#e8a631" },
-  { label: "10K – Half", range: "6.2 – 13.1 mi", color: "#3b55ff" },
-  { label: "Half – Full", range: "13.1 – 26.2 mi", color: "#9c2abc" },
-  { label: "Marathon+", range: "≥ 26.2 mi", color: "#29e483" },
+  { label: "5K - 10K", range: "3.1 - 6.2 mi", color: "#e8a631" },
+  { label: "10K - Half", range: "6.2 - 13.1 mi", color: "#3b55ff" },
+  { label: "Half - Full", range: "13.1 - 26.2 mi", color: "#9c2abc" },
+  { label: "Marathon+", range: ">= 26.2 mi", color: "#29e483" },
 ];
 
-function getDistanceBucketIndex(distanceMiles: number | null): number {
-  if (distanceMiles == null) return 0;
+function getDistanceBucketIndex(distanceMiles: number | null): number | null {
+  if (distanceMiles == null) return null;
   if (distanceMiles >= 26.2) return 4;
   if (distanceMiles >= 13.1) return 3;
   if (distanceMiles >= 6.2) return 2;
@@ -36,10 +36,46 @@ function formatSeconds(value: number | null): string {
   const seconds = total % 60;
 
   if (hours > 0) {
-    return `${hours}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+    return `${hours}:${String(minutes).padStart(2, "0")}'${String(seconds).padStart(2, "0")}"`;
   }
 
-  return `${minutes}:${String(seconds).padStart(2, "0")}`;
+  return `${minutes}'${String(seconds).padStart(2, "0")}"`;
+}
+
+function formatMiles(value: number | null): string {
+  if (!Number.isFinite(value) || value == null) return "-";
+  return `${value.toFixed(2)} mi`;
+}
+
+function formatPace(value: number | null): string {
+  if (!Number.isFinite(value) || value == null || value <= 0) return "-";
+
+  const rounded = Math.max(0, Math.round(value));
+  const minutes = Math.floor(rounded / 60);
+  const seconds = rounded % 60;
+
+  return `${minutes}'${String(seconds).padStart(2, "0")}"/mi`;
+}
+
+function formatHeartRate(avg: number | null, max: number | null): string {
+  if (!Number.isFinite(avg) && !Number.isFinite(max)) return "-";
+
+  const avgLabel = Number.isFinite(avg) ? Math.round(avg as number) : "-";
+  const maxLabel = Number.isFinite(max) ? Math.round(max as number) : "-";
+  return `${avgLabel}/${maxLabel}`;
+}
+
+function parseMiles(image: ImageListItem): number | null {
+  const raw = image.metadata?.titleLabel;
+  if (raw == null) return null;
+
+  const parsed = parseFloat(raw);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function isSameValue(a: number | null, b: number | null): boolean {
+  if (a == null || b == null) return false;
+  return Math.abs(a - b) < 1e-9;
 }
 
 type RunSummaryProps = {
@@ -67,18 +103,62 @@ const MONTHS = [
 
 type YearTab = "ALL" | number;
 type MonthTab = "ALL" | number;
+type SummaryAccordion = "best" | "list" | null;
+
+type RunPoint = {
+  filename: string;
+  distanceMiles: number | null;
+  activitySeconds: number | null;
+  paceSeconds: number | null;
+};
+
+type BadgeRunPoint = {
+  year: number | null;
+  distanceMiles: number | null;
+  paceSeconds: number | null;
+};
+
+type RunListRow = {
+  filename: string;
+  year: number | null;
+  month: number | null;
+  day: number | null;
+  distanceMiles: number | null;
+  paceSeconds: number | null;
+  activitySeconds: number | null;
+  elapsedSeconds: number | null;
+  avgHeartRate: number | null;
+  maxHeartRate: number | null;
+};
+
+type MonthlySummary = {
+  year: number;
+  month: number;
+  runs: number;
+  totalMiles: number | null;
+  averagePaceSeconds: number | null;
+  bestDistanceMiles: number | null;
+  bestDistanceFilename: string | null;
+  bestDistancePaceSeconds: number | null;
+  bestPaceSeconds: number | null;
+  bestPaceFilename: string | null;
+  bestPaceDistanceMiles: number | null;
+  listThumbnailFilename: string | null;
+};
 
 function getDatePartsFromFilename(
   filename: string,
-): { year: number; month: number } | null {
+): { year: number; month: number; day: number } | null {
   const match = filename.match(/^(\d{4})-(\d{2})-(\d{2})_/);
   if (!match) return null;
 
   const year = Number(match[1]);
   const month = Number(match[2]);
+  const day = Number(match[3]);
   if (!Number.isInteger(year) || month < 1 || month > 12) return null;
+  if (!Number.isInteger(day) || day < 1 || day > 31) return null;
 
-  return { year, month };
+  return { year, month, day };
 }
 
 export default function RunSummary({
@@ -88,6 +168,8 @@ export default function RunSummary({
   onYearChange,
   onMonthChange,
 }: RunSummaryProps) {
+  const [openSummary, setOpenSummary] = useState<SummaryAccordion>("list");
+
   const yearTabs = useMemo(() => {
     const years = new Set<number>();
     for (const image of images) {
@@ -130,6 +212,7 @@ export default function RunSummary({
   }, [activeYear, images]);
 
   const filteredImages = useMemo(() => {
+    // LIST view respects both year and month filters.
     if (activeYear === "ALL") return images;
 
     if (activeMonth === "ALL") {
@@ -145,16 +228,289 @@ export default function RunSummary({
     });
   }, [activeMonth, activeYear, images]);
 
+  const bestScopeImages = useMemo(() => {
+    // BEST view is year-scoped only (month filter intentionally ignored).
+    if (activeYear === "ALL") return images;
+
+    return images.filter((image) => {
+      const parts = getDatePartsFromFilename(image.filename);
+      return parts?.year === activeYear;
+    });
+  }, [activeYear, images]);
+
+  const monthlySummaries = useMemo(() => {
+    const grouped = new Map<
+      string,
+      { year: number; month: number; runs: RunPoint[] }
+    >();
+
+    for (const image of bestScopeImages) {
+      const parts = getDatePartsFromFilename(image.filename);
+      if (!parts) continue;
+
+      const distanceMiles = parseMiles(image);
+      const activitySeconds = Number.isFinite(
+        image.metadata?.metrics?.activityTime,
+      )
+        ? Number(image.metadata?.metrics?.activityTime)
+        : null;
+      const derivedPaceSeconds =
+        distanceMiles != null && distanceMiles > 0 && activitySeconds != null
+          ? activitySeconds / distanceMiles
+          : null;
+      const bestMileSeconds = Number.isFinite(
+        image.metadata?.metrics?.bestMileSeconds,
+      )
+        ? Number(image.metadata?.metrics?.bestMileSeconds)
+        : null;
+      const paceSeconds = bestMileSeconds ?? derivedPaceSeconds;
+      const key = `${parts.year}-${String(parts.month).padStart(2, "0")}`;
+
+      const monthRuns = grouped.get(key) ?? {
+        year: parts.year,
+        month: parts.month,
+        runs: [],
+      };
+
+      monthRuns.runs.push({
+        filename: image.filename,
+        distanceMiles,
+        activitySeconds,
+        paceSeconds,
+      });
+
+      grouped.set(key, monthRuns);
+    }
+
+    const summaries: MonthlySummary[] = [];
+    for (const group of grouped.values()) {
+      let totalMiles = 0;
+      let hasDistance = false;
+      let totalPaceMiles = 0;
+      let totalPaceSeconds = 0;
+      let bestDistanceMiles: number | null = null;
+      let bestDistanceFilename: string | null = null;
+      let bestDistancePaceSeconds: number | null = null;
+      let bestPaceSeconds: number | null = null;
+      let bestPaceFilename: string | null = null;
+      let bestPaceDistanceMiles: number | null = null;
+
+      for (const run of group.runs) {
+        if (run.distanceMiles != null) {
+          hasDistance = true;
+          totalMiles += run.distanceMiles;
+
+          if (
+            bestDistanceMiles == null ||
+            run.distanceMiles > bestDistanceMiles
+          ) {
+            bestDistanceMiles = run.distanceMiles;
+            bestDistanceFilename = run.filename;
+            bestDistancePaceSeconds = run.paceSeconds;
+          }
+        }
+
+        if (
+          run.activitySeconds != null &&
+          run.distanceMiles != null &&
+          run.distanceMiles > 0
+        ) {
+          totalPaceMiles += run.distanceMiles;
+          totalPaceSeconds += run.activitySeconds;
+        }
+
+        if (run.paceSeconds != null && run.paceSeconds > 0) {
+          if (bestPaceSeconds == null || run.paceSeconds < bestPaceSeconds) {
+            bestPaceSeconds = run.paceSeconds;
+            bestPaceFilename = run.filename;
+            bestPaceDistanceMiles = run.distanceMiles;
+          }
+        }
+      }
+
+      const averagePaceSeconds =
+        totalPaceMiles > 0 ? totalPaceSeconds / totalPaceMiles : null;
+
+      summaries.push({
+        year: group.year,
+        month: group.month,
+        runs: group.runs.length,
+        totalMiles: hasDistance ? totalMiles : null,
+        averagePaceSeconds,
+        bestDistanceMiles,
+        bestDistanceFilename,
+        bestDistancePaceSeconds,
+        bestPaceSeconds,
+        bestPaceFilename,
+        bestPaceDistanceMiles,
+        listThumbnailFilename:
+          bestDistanceFilename ?? group.runs[0]?.filename ?? null,
+      });
+    }
+
+    return summaries.sort((a, b) => {
+      if (a.year !== b.year) return b.year - a.year;
+      return b.month - a.month;
+    });
+  }, [bestScopeImages]);
+
+  const allBadgeRuns = useMemo(() => {
+    // Badge scope is intentionally independent of UI filters:
+    // PB uses global all-activity best, SB uses per-year best.
+    const runs: BadgeRunPoint[] = images.map((image) => {
+      const parts = getDatePartsFromFilename(image.filename);
+      const distanceMiles = parseMiles(image);
+      const activitySeconds = Number.isFinite(
+        image.metadata?.metrics?.activityTime,
+      )
+        ? Number(image.metadata?.metrics?.activityTime)
+        : null;
+      const derivedPaceSeconds =
+        distanceMiles != null && distanceMiles > 0 && activitySeconds != null
+          ? activitySeconds / distanceMiles
+          : null;
+      const bestMileSeconds = Number.isFinite(
+        image.metadata?.metrics?.bestMileSeconds,
+      )
+        ? Number(image.metadata?.metrics?.bestMileSeconds)
+        : null;
+
+      return {
+        year: parts?.year ?? null,
+        distanceMiles,
+        paceSeconds: bestMileSeconds ?? derivedPaceSeconds,
+      };
+    });
+
+    return runs;
+  }, [images]);
+
+  const listRows = useMemo(() => {
+    const rows: RunListRow[] = filteredImages.map((image) => {
+      const parts = getDatePartsFromFilename(image.filename);
+      const distanceMiles = parseMiles(image);
+      const activitySeconds = Number.isFinite(
+        image.metadata?.metrics?.activityTime,
+      )
+        ? Number(image.metadata?.metrics?.activityTime)
+        : null;
+      const derivedPaceSeconds =
+        distanceMiles != null && distanceMiles > 0 && activitySeconds != null
+          ? activitySeconds / distanceMiles
+          : null;
+      const bestMileSeconds = Number.isFinite(
+        image.metadata?.metrics?.bestMileSeconds,
+      )
+        ? Number(image.metadata?.metrics?.bestMileSeconds)
+        : null;
+
+      return {
+        filename: image.filename,
+        year: parts?.year ?? null,
+        month: parts?.month ?? null,
+        day: parts?.day ?? null,
+        distanceMiles,
+        paceSeconds: bestMileSeconds ?? derivedPaceSeconds,
+        activitySeconds,
+        elapsedSeconds: Number.isFinite(image.metadata?.metrics?.elapsedTime)
+          ? Number(image.metadata?.metrics?.elapsedTime)
+          : null,
+        avgHeartRate: Number.isFinite(image.metadata?.metrics?.avgHeartRate)
+          ? Number(image.metadata?.metrics?.avgHeartRate)
+          : null,
+        maxHeartRate: Number.isFinite(image.metadata?.metrics?.maxHeartRate)
+          ? Number(image.metadata?.metrics?.maxHeartRate)
+          : null,
+      };
+    });
+
+    return rows.sort((a, b) => b.filename.localeCompare(a.filename));
+  }, [filteredImages]);
+
+  const listTotalMiles = useMemo(() => {
+    let totalMiles = 0;
+    let hasDistance = false;
+
+    for (const row of listRows) {
+      if (row.distanceMiles != null) {
+        totalMiles += row.distanceMiles;
+        hasDistance = true;
+      }
+    }
+
+    return hasDistance ? totalMiles : null;
+  }, [listRows]);
+
+  const listBucketStats = useMemo(() => {
+    const counts = new Array(DISTANCE_BUCKETS.length).fill(0);
+    let validDistanceRuns = 0;
+
+    for (const row of listRows) {
+      const bucketIndex = getDistanceBucketIndex(row.distanceMiles);
+      if (bucketIndex == null) continue;
+      counts[bucketIndex] += 1;
+      validDistanceRuns += 1;
+    }
+
+    return DISTANCE_BUCKETS.map((bucket, index) => ({
+      ...bucket,
+      count: counts[index],
+      percent:
+        validDistanceRuns > 0
+          ? Math.round((counts[index] / validDistanceRuns) * 100)
+          : 0,
+    }));
+  }, [listRows]);
+
+  const bestDistanceGlobal = useMemo(() => {
+    let value: number | null = null;
+    for (const run of allBadgeRuns) {
+      if (run.distanceMiles == null) continue;
+      if (value == null || run.distanceMiles > value) {
+        value = run.distanceMiles;
+      }
+    }
+    return value;
+  }, [allBadgeRuns]);
+
+  const bestPaceGlobal = useMemo(() => {
+    let value: number | null = null;
+    for (const run of allBadgeRuns) {
+      if (run.paceSeconds == null) continue;
+      if (value == null || run.paceSeconds < value) {
+        value = run.paceSeconds;
+      }
+    }
+    return value;
+  }, [allBadgeRuns]);
+
+  const bestDistanceByYear = useMemo(() => {
+    const byYear = new Map<number, number>();
+    for (const run of allBadgeRuns) {
+      if (run.year == null || run.distanceMiles == null) continue;
+
+      const existing = byYear.get(run.year);
+      if (existing == null || run.distanceMiles > existing) {
+        byYear.set(run.year, run.distanceMiles);
+      }
+    }
+    return byYear;
+  }, [allBadgeRuns]);
+
+  const bestPaceByYear = useMemo(() => {
+    const byYear = new Map<number, number>();
+    for (const run of allBadgeRuns) {
+      if (run.year == null || run.paceSeconds == null) continue;
+
+      const existing = byYear.get(run.year);
+      if (existing == null || run.paceSeconds < existing) {
+        byYear.set(run.year, run.paceSeconds);
+      }
+    }
+    return byYear;
+  }, [allBadgeRuns]);
+
   if (images.length === 0) return null;
-
-  const counts = [0, 0, 0, 0, 0];
-  for (const { metadata } of filteredImages) {
-    const miles =
-      metadata?.titleLabel != null ? parseFloat(metadata.titleLabel) : null;
-    counts[getDistanceBucketIndex(isNaN(miles!) ? null : miles)]++;
-  }
-
-  const buckets: Bucket[] = BUCKETS.map((b, i) => ({ ...b, count: counts[i] }));
   const total = filteredImages.length;
 
   const metricRows = filteredImages
@@ -194,6 +550,39 @@ export default function RunSummary({
         ? `All months in ${activeYear}`
         : `${MONTHS[activeMonth - 1]} ${activeYear}`;
 
+  const listRowsCount = listRows.length;
+
+  function getBadge(
+    value: number | null,
+    yearly: number | undefined,
+    global: number | null,
+  ) {
+    // Priority: PB if value matches global best, otherwise SB if it matches
+    // the year best for that metric.
+    if (value == null) return null;
+    if (isSameValue(value, global)) return "PB";
+    if (yearly != null && isSameValue(value, yearly)) return "SB";
+    return null;
+  }
+
+  function renderThumbnail(filename: string | null, alt: string) {
+    if (!filename) {
+      return <div className="run-summary-thumb-placeholder">-</div>;
+    }
+
+    const src = `/api/images/${encodeURIComponent(filename)}`;
+    return (
+      <Image
+        className="run-summary-thumb"
+        src={src}
+        alt={alt}
+        width={36}
+        height={36}
+        unoptimized
+      />
+    );
+  }
+
   return (
     <section
       className="run-summary-section"
@@ -219,7 +608,8 @@ export default function RunSummary({
           })}
         </div>
 
-        {activeYear !== "ALL" && (
+        {activeYear !== "ALL" && openSummary !== "best" && (
+          // Hide month chips while BEST is open to reinforce year-only BEST scope.
           <div className="run-summary-month-chips">
             {MONTHS.map((monthName, index) => ({
               monthName,
@@ -263,45 +653,215 @@ export default function RunSummary({
         </span>
       </div>
 
-      <div className="run-summary">
-        <div className="run-summary-bar-container">
-          <div className="run-summary-bar-wrapper">
-            {buckets.map(({ label, color, count }) => (
-              <div
-                key={label}
-                className="run-summary-bar-segment"
-                style={{
-                  flex: count,
-                  background: color,
-                  minWidth: count > 0 ? "2px" : "0",
-                }}
-                title={`${label}: ${count}`}
-              />
-            ))}
+      <section className="dashboard-section run-summary-panel-section">
+        <h2 className="accordion-heading">
+          <button
+            type="button"
+            className="accordion-toggle"
+            aria-expanded={openSummary === "best"}
+            aria-controls="summary-best-panel"
+            onClick={() =>
+              setOpenSummary((current) => (current === "best" ? null : "best"))
+            }
+          >
+            <span>Best Distance / Pace</span>
+            <span className="accordion-icon" aria-hidden="true">
+              {openSummary === "best" ? "-" : "+"}
+            </span>
+          </button>
+        </h2>
+        <div
+          id="summary-best-panel"
+          className={`accordion-panel ${openSummary === "best" ? "expanded" : "collapsed"}`}
+          aria-hidden={openSummary !== "best"}
+        >
+          <div className="accordion-panel-content run-summary-best-content">
+            <div className="run-summary-list-block">
+              <h3 className="run-summary-list-title">Best Distance</h3>
+              {monthlySummaries.map((row) => {
+                const badge = getBadge(
+                  row.bestDistanceMiles,
+                  bestDistanceByYear.get(row.year),
+                  bestDistanceGlobal,
+                );
+
+                return (
+                  <div
+                    key={`best-distance-${row.year}-${row.month}`}
+                    className="run-summary-list-row"
+                  >
+                    <span className="run-summary-list-year">{row.year}</span>
+                    <span className="run-summary-list-month">
+                      {MONTHS[row.month - 1]}
+                    </span>
+                    <span className="run-summary-list-badge-cell">
+                      {badge ? (
+                        <span
+                          className={`run-summary-badge ${badge === "PB" ? "pb" : "sb"}`}
+                        >
+                          {badge}
+                        </span>
+                      ) : (
+                        "-"
+                      )}
+                    </span>
+                    <span className="run-summary-list-value run-summary-list-value-stack">
+                      <span>{formatMiles(row.bestDistanceMiles)}</span>
+                      <span className="run-summary-list-subvalue">
+                        {formatPace(row.bestDistancePaceSeconds)}
+                      </span>
+                    </span>
+                    <span className="run-summary-list-thumb-cell">
+                      {renderThumbnail(
+                        row.bestDistanceFilename,
+                        `${row.year}-${String(row.month).padStart(2, "0")} best distance`,
+                      )}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="run-summary-list-block">
+              <h3 className="run-summary-list-title">Best Pace</h3>
+              {monthlySummaries.map((row) => {
+                const badge = getBadge(
+                  row.bestPaceSeconds,
+                  bestPaceByYear.get(row.year),
+                  bestPaceGlobal,
+                );
+
+                return (
+                  <div
+                    key={`best-pace-${row.year}-${row.month}`}
+                    className="run-summary-list-row"
+                  >
+                    <span className="run-summary-list-year">{row.year}</span>
+                    <span className="run-summary-list-month">
+                      {MONTHS[row.month - 1]}
+                    </span>
+                    <span className="run-summary-list-badge-cell">
+                      {badge ? (
+                        <span
+                          className={`run-summary-badge ${badge === "PB" ? "pb" : "sb"}`}
+                        >
+                          {badge}
+                        </span>
+                      ) : (
+                        "-"
+                      )}
+                    </span>
+                    <span className="run-summary-list-value run-summary-list-value-stack">
+                      <span>{formatPace(row.bestPaceSeconds)}</span>
+                      <span className="run-summary-list-subvalue">
+                        {formatMiles(row.bestPaceDistanceMiles)}
+                      </span>
+                    </span>
+                    <span className="run-summary-list-thumb-cell">
+                      {renderThumbnail(
+                        row.bestPaceFilename,
+                        `${row.year}-${String(row.month).padStart(2, "0")} best pace`,
+                      )}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
+      </section>
 
-        <div className="run-summary-legend">
-          {buckets.map(({ label, range, color, count }) => {
-            const percentValue =
-              total > 0 ? Math.round((count / total) * 100) : 0;
-
-            return (
-              <div key={label} className="run-summary-legend-item">
-                <span
-                  className="run-summary-legend-dot"
-                  style={{ background: color }}
-                />
-                <span className="run-summary-legend-label">{label}</span>
-                <span className="run-summary-legend-range">{range}</span>
-                <span className="run-summary-legend-count">
-                  {count} ({percentValue}%)
-                </span>
+      <section className="dashboard-section run-summary-panel-section">
+        <h2 className="accordion-heading">
+          <button
+            type="button"
+            className="accordion-toggle"
+            aria-expanded={openSummary === "list"}
+            aria-controls="summary-list-panel"
+            onClick={() =>
+              setOpenSummary((current) => (current === "list" ? null : "list"))
+            }
+          >
+            <span>Runs ({listRowsCount})</span>
+            <span className="accordion-icon" aria-hidden="true">
+              {openSummary === "list" ? "-" : "+"}
+            </span>
+          </button>
+        </h2>
+        <div
+          id="summary-list-panel"
+          className={`accordion-panel ${openSummary === "list" ? "expanded" : "collapsed"}`}
+          aria-hidden={openSummary !== "list"}
+        >
+          <div className="accordion-panel-content run-summary-list-content">
+            <div className="run-summary-list-block">
+              <div className="run-summary-list-total">
+                Total Miles: <strong>{formatMiles(listTotalMiles)}</strong>
               </div>
-            );
-          })}
+
+              {listRows.map((row) => (
+                <div
+                  key={`list-${row.filename}`}
+                  className="run-summary-list-row"
+                >
+                  <span className="run-summary-list-year">
+                    {row.year ?? "-"}
+                  </span>
+                  <span className="run-summary-list-month">
+                    {row.month != null && row.day != null
+                      ? `${MONTHS[row.month - 1]} ${row.day}`
+                      : "-"}
+                  </span>
+                  <span className="run-summary-list-value">
+                    {formatMiles(row.distanceMiles)}
+                  </span>
+                  <span className="run-summary-list-value-secondary">
+                    <span className="run-summary-list-pace">
+                      {formatPace(row.paceSeconds)}
+                    </span>
+                    <span className="run-summary-list-meta">
+                      Act {formatSeconds(row.activitySeconds)} · Elap{" "}
+                      {formatSeconds(row.elapsedSeconds)} · HR{" "}
+                      {formatHeartRate(row.avgHeartRate, row.maxHeartRate)}
+                    </span>
+                  </span>
+                  <span className="run-summary-list-thumb-cell">
+                    {renderThumbnail(
+                      row.filename,
+                      `${row.filename} run summary`,
+                    )}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            <div className="run-summary-list-block run-summary-bucket-block">
+              <h3 className="run-summary-list-title">Distance Buckets</h3>
+              <div className="run-summary-bucket-list">
+                {listBucketStats.map((bucket) => (
+                  <div key={bucket.label} className="run-summary-bucket-row">
+                    <span className="run-summary-bucket-label-wrap">
+                      <span
+                        className="run-summary-bucket-dot"
+                        style={{ background: bucket.color }}
+                      />
+                      <span className="run-summary-bucket-label">
+                        {bucket.label}
+                      </span>
+                      <span className="run-summary-bucket-range">
+                        {bucket.range}
+                      </span>
+                    </span>
+                    <span className="run-summary-bucket-percent">
+                      {bucket.percent}%
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
+      </section>
     </section>
   );
 }

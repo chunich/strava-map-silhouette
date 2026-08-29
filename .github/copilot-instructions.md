@@ -19,3 +19,5 @@
 - Work through each checklist item systematically.
 - Keep communication concise and focused.
 - Follow development best practices.
+- Before running any `git commit`, always present the proposed commit message first and wait for explicit user approval.
+- Do not create a commit until the user confirms the exact message (or asks for edits and then re-approves).

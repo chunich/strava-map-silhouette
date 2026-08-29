@@ -46,7 +46,7 @@ function formatSeconds(value: number): string {
   const total = Math.max(0, Math.round(value));
   const minutes = Math.floor(total / 60);
   const seconds = total % 60;
-  return `${minutes}:${String(seconds).padStart(2, "0")}`;
+  return `${minutes}'${String(seconds).padStart(2, "0")}"`;
 }
 
 export default function ImageGallery({
