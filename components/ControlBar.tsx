@@ -5,6 +5,7 @@ type ControlBarProps = {
   imageColumns: number;
   loadingAction: string | null;
   onRefresh: () => void;
+  onRefreshMetadata: () => void;
   onGenerateFromFiles: () => void;
   onGenerateFromStrava: () => void;
   onStitch: () => void;
@@ -21,6 +22,7 @@ export default function ControlBar({
   imageColumns,
   loadingAction,
   onRefresh,
+  onRefreshMetadata,
   onGenerateFromFiles,
   onGenerateFromStrava,
   onStitch,
@@ -36,6 +38,8 @@ export default function ControlBar({
         ? "API: Error"
         : "API: Checking...";
   const busy = Boolean(loadingAction);
+  const refreshStatsLabel =
+    loadingAction === "refresh-stats" ? "Refreshing..." : "Refresh Stats";
   const refreshLabel =
     loadingAction === "refresh" ? "Refreshing..." : "Refresh";
   const gpxLabel = loadingAction === "gpx" ? "Generating..." : "GPX/TCX/FIT";
@@ -48,6 +52,9 @@ export default function ControlBar({
     <div className="control-bar" aria-busy={busy}>
       <button type="button" onClick={onRefresh} disabled={busy}>
         {refreshLabel}
+      </button>
+      <button type="button" onClick={onRefreshMetadata} disabled={busy}>
+        {refreshStatsLabel}
       </button>
       <button type="button" onClick={onGenerateFromFiles} disabled={busy}>
         {gpxLabel}

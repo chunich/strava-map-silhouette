@@ -21,7 +21,21 @@ function getValue(object, keys) {
   return null;
 }
 
-function computeBestMileSeconds(samples) {
+const BEST_EFFORT_DISTANCES = [
+  { key: "best1MileSeconds", miles: 1.0 },
+  { key: "best5KSeconds", miles: 3.10686 },
+  { key: "best10KSeconds", miles: 6.21371 },
+  { key: "best10MileSeconds", miles: 10.0 },
+  { key: "best20KSeconds", miles: 12.4274 },
+  { key: "bestHalfSeconds", miles: 13.1094 },
+  { key: "best25KSeconds", miles: 15.534 },
+  { key: "best30KSeconds", miles: 18.6411 },
+  { key: "best35KSeconds", miles: 21.748 },
+  { key: "best40KSeconds", miles: 24.8548 },
+  { key: "bestMarathonSeconds", miles: 26.2188 },
+];
+
+function computeBestEffortSeconds(samples, targetDistanceMiles) {
   if (!Array.isArray(samples) || samples.length < 2) {
     return null;
   }
@@ -30,7 +44,7 @@ function computeBestMileSeconds(samples) {
   let start = 0;
 
   for (let end = 1; end < samples.length; end++) {
-    const targetDistance = samples[end].distanceMiles - 1;
+    const targetDistance = samples[end].distanceMiles - targetDistanceMiles;
 
     while (
       start + 1 < end &&
@@ -195,7 +209,10 @@ function parseFIT(fitBuffer) {
         Number.isFinite(movingTime) && distance > 0
           ? movingTime / distance
           : null;
-      const bestMileSeconds = computeBestMileSeconds(distanceTimeSamples);
+      const bestEfforts = {};
+      for (const { key, miles } of BEST_EFFORT_DISTANCES) {
+        bestEfforts[key] = computeBestEffortSeconds(distanceTimeSamples, miles);
+      }
 
       const avgHeartRate = Number.isFinite(
         getValue(session, ["avg_heart_rate", "avgHeartRate"]),
@@ -228,7 +245,8 @@ function parseFIT(fitBuffer) {
           maxHeartRate,
           totalAscent: getValue(session, ["total_ascent", "totalAscent"]),
           totalDescent: getValue(session, ["total_descent", "totalDescent"]),
-          bestMileSeconds,
+          bestMileSeconds: bestEfforts.best1MileSeconds,
+          ...bestEfforts,
         },
       });
     });

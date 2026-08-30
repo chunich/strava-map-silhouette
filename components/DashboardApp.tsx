@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import ControlBar from "@/components/ControlBar";
+import DropZone from "@/components/DropZone";
 import ImageGallery from "@/components/ImageGallery";
 import RunSummary from "@/components/RunSummary";
 import StatusBanner from "@/components/StatusBanner";
@@ -9,7 +10,9 @@ import StravaActivityList from "@/components/StravaActivityList";
 import {
   generateImages,
   generateImagesFromStrava,
+  refreshMetadata,
   stitchImages,
+  uploadAndProcessFiles,
 } from "@/lib/api-client";
 import { isRunningActivity } from "@/lib/activity-format";
 import type { StatusTone } from "@/lib/api-types";
@@ -139,6 +142,45 @@ export default function DashboardApp() {
     }
   }, [reloadImages]);
 
+  const handleDropZoneProcessed = useCallback(
+    async (response: Awaited<ReturnType<typeof uploadAndProcessFiles>>) => {
+      setStatus({
+        tone: response.summary.successful > 0 ? "success" : "error",
+        message: `Processed ${response.summary.successful} of ${response.summary.total} file(s).${response.summary.failed ? ` ${response.summary.failed} failed.` : ""}`,
+      });
+      await refreshImages();
+    },
+    [refreshImages],
+  );
+
+  const handleDropZoneError = useCallback((message: string) => {
+    setStatus({ tone: "error", message });
+  }, []);
+
+  const runRefreshMetadata = useCallback(async () => {
+    setLoadingAction("refresh-stats");
+    setStatus({
+      tone: "info",
+      message: "Refreshing stats from source files...",
+    });
+    try {
+      const response = await refreshMetadata();
+      setStatus({
+        tone: response.summary.updated > 0 ? "success" : "info",
+        message: `Stats refreshed: ${response.summary.updated} updated, ${response.summary.skipped} skipped.${response.summary.failed ? ` ${response.summary.failed} failed.` : ""}`,
+      });
+      void reloadImages();
+    } catch (error) {
+      setStatus({
+        tone: "error",
+        message:
+          error instanceof Error ? error.message : "Metadata refresh failed",
+      });
+    } finally {
+      setLoadingAction(null);
+    }
+  }, [reloadImages]);
+
   const runGenerateFromFiles = useCallback(async () => {
     setLoadingAction("gpx");
     setStatus({
@@ -253,6 +295,9 @@ export default function DashboardApp() {
         onRefresh={() => {
           void refreshImages();
         }}
+        onRefreshMetadata={() => {
+          void runRefreshMetadata();
+        }}
         onGenerateFromFiles={() => {
           void runGenerateFromFiles();
         }}
@@ -268,6 +313,14 @@ export default function DashboardApp() {
         onToggleFilenames={setHideFilenames}
         onToggleImageOverlay={setShowImageOverlay}
         onImageColumnsChange={setImageColumns}
+      />
+
+      <DropZone
+        disabled={Boolean(loadingAction)}
+        onProcessed={(response) => {
+          void handleDropZoneProcessed(response);
+        }}
+        onError={handleDropZoneError}
       />
 
       {status ? (

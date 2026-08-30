@@ -25,6 +25,7 @@ async function processFileActivities(gpxPaths, outputDir, options = {}) {
     filterType = "Running",
     minimumDistance = 1,
     verbose = false,
+    force = false,
   } = options;
 
   await fs.mkdir(outputDir, { recursive: true });
@@ -105,21 +106,23 @@ async function processFileActivities(gpxPaths, outputDir, options = {}) {
       const filename = `${dateStr}_${activityName}_${baseName}.svg`;
       const outputPath = path.join(outputDir, filename);
 
-      // Skip generation if the output image already exists
-      try {
-        await fs.access(outputPath);
-        console.log(`  Skipping: Output already exists (${filename})`);
-        results.push({
-          activity: activity.name,
-          type: activityType,
-          status: "skipped",
-          outputImage: outputPath,
-          gpxFile: gpxPath,
-          reason: "already-exists",
-        });
-        continue;
-      } catch {
-        // File does not exist yet, proceed with generation.
+      // Skip generation if the output image already exists (unless force is set)
+      if (!force) {
+        try {
+          await fs.access(outputPath);
+          console.log(`  Skipping: Output already exists (${filename})`);
+          results.push({
+            activity: activity.name,
+            type: activityType,
+            status: "skipped",
+            outputImage: outputPath,
+            gpxFile: gpxPath,
+            reason: "already-exists",
+          });
+          continue;
+        } catch {
+          // File does not exist yet, proceed with generation.
+        }
       }
 
       // Log VERBOSE activity info

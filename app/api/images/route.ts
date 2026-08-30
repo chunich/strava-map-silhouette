@@ -37,6 +37,50 @@ function parseMetadata(content: string): ImageMetadata {
         typeof metrics.bestMileSeconds === "number"
           ? metrics.bestMileSeconds
           : null,
+      best1MileSeconds:
+        typeof metrics.best1MileSeconds === "number"
+          ? metrics.best1MileSeconds
+          : null,
+      best5KSeconds:
+        typeof metrics.best5KSeconds === "number"
+          ? metrics.best5KSeconds
+          : null,
+      best10KSeconds:
+        typeof metrics.best10KSeconds === "number"
+          ? metrics.best10KSeconds
+          : null,
+      best10MileSeconds:
+        typeof metrics.best10MileSeconds === "number"
+          ? metrics.best10MileSeconds
+          : null,
+      best20KSeconds:
+        typeof metrics.best20KSeconds === "number"
+          ? metrics.best20KSeconds
+          : null,
+      bestHalfSeconds:
+        typeof metrics.bestHalfSeconds === "number"
+          ? metrics.bestHalfSeconds
+          : null,
+      best25KSeconds:
+        typeof metrics.best25KSeconds === "number"
+          ? metrics.best25KSeconds
+          : null,
+      best30KSeconds:
+        typeof metrics.best30KSeconds === "number"
+          ? metrics.best30KSeconds
+          : null,
+      best35KSeconds:
+        typeof metrics.best35KSeconds === "number"
+          ? metrics.best35KSeconds
+          : null,
+      best40KSeconds:
+        typeof metrics.best40KSeconds === "number"
+          ? metrics.best40KSeconds
+          : null,
+      bestMarathonSeconds:
+        typeof metrics.bestMarathonSeconds === "number"
+          ? metrics.bestMarathonSeconds
+          : null,
     };
   }
 

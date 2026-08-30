@@ -27,6 +27,17 @@ export type ImageMetadata = {
     totalAscent?: number | null;
     totalDescent?: number | null;
     bestMileSeconds?: number | null;
+    best1MileSeconds?: number | null;
+    best5KSeconds?: number | null;
+    best10KSeconds?: number | null;
+    best10MileSeconds?: number | null;
+    best20KSeconds?: number | null;
+    bestHalfSeconds?: number | null;
+    best25KSeconds?: number | null;
+    best30KSeconds?: number | null;
+    best35KSeconds?: number | null;
+    best40KSeconds?: number | null;
+    bestMarathonSeconds?: number | null;
   };
 };
 
@@ -44,6 +55,16 @@ export type GeneratedImageResult = {
   success: boolean;
   outputImage: string | null;
   error: string | null;
+};
+
+export type RefreshMetadataResponse = {
+  message: string;
+  summary: {
+    total: number;
+    updated: number;
+    skipped: number;
+    failed: number;
+  };
 };
 
 export type GenerateImagesResponse = {

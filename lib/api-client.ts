@@ -4,6 +4,7 @@ import type {
   GenerateImagesResponse,
   HealthResponse,
   ImageListResponse,
+  RefreshMetadataResponse,
   StitchResponse,
   StravaActivitiesResponse,
 } from "@/lib/api-types";
@@ -86,4 +87,31 @@ export function stitchImages() {
 
 export function getStravaActivities() {
   return fetchJson<StravaActivitiesResponse>("/api/strava/activities");
+}
+
+export function refreshMetadata() {
+  return fetchJson<RefreshMetadataResponse>("/api/images/refresh-metadata", {
+    method: "POST",
+  });
+}
+
+export async function uploadAndProcessFiles(
+  files: File[],
+): Promise<GenerateImagesResponse> {
+  const formData = new FormData();
+  for (const file of files) {
+    formData.append("files", file);
+  }
+
+  const response = await fetch("/api/images/upload-and-process", {
+    method: "POST",
+    body: formData,
+    // No Content-Type header — browser sets it with the multipart boundary
+  });
+
+  if (!response.ok) {
+    throw await parseError(response);
+  }
+
+  return (await response.json()) as GenerateImagesResponse;
 }

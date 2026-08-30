@@ -118,6 +118,20 @@ type BadgeRunPoint = {
   paceSeconds: number | null;
 };
 
+type BestEffortSeconds = {
+  best1MileSeconds: number | null;
+  best5KSeconds: number | null;
+  best10KSeconds: number | null;
+  best10MileSeconds: number | null;
+  best20KSeconds: number | null;
+  bestHalfSeconds: number | null;
+  best25KSeconds: number | null;
+  best30KSeconds: number | null;
+  best35KSeconds: number | null;
+  best40KSeconds: number | null;
+  bestMarathonSeconds: number | null;
+};
+
 type RunListRow = {
   filename: string;
   year: number | null;
@@ -129,6 +143,7 @@ type RunListRow = {
   elapsedSeconds: number | null;
   avgHeartRate: number | null;
   maxHeartRate: number | null;
+  bestEfforts: BestEffortSeconds;
 };
 
 type MonthlySummary = {
@@ -145,6 +160,20 @@ type MonthlySummary = {
   bestPaceDistanceMiles: number | null;
   listThumbnailFilename: string | null;
 };
+
+const BEST_EFFORT_COLS: { key: keyof BestEffortSeconds; label: string }[] = [
+  { key: "best1MileSeconds", label: "1mi" },
+  { key: "best5KSeconds", label: "5K" },
+  { key: "best10KSeconds", label: "10K" },
+  { key: "best10MileSeconds", label: "10mi" },
+  { key: "best20KSeconds", label: "20K" },
+  { key: "bestHalfSeconds", label: "Half" },
+  { key: "best25KSeconds", label: "25K" },
+  { key: "best30KSeconds", label: "30K" },
+  { key: "best35KSeconds", label: "35K" },
+  { key: "best40KSeconds", label: "40K" },
+  { key: "bestMarathonSeconds", label: "Full" },
+];
 
 function getDatePartsFromFilename(
   filename: string,
@@ -404,6 +433,10 @@ export default function RunSummary({
         ? Number(image.metadata?.metrics?.bestMileSeconds)
         : null;
 
+      const m = image.metadata?.metrics;
+      const n = (v: number | null | undefined) =>
+        Number.isFinite(v) ? Number(v) : null;
+
       return {
         filename: image.filename,
         year: parts?.year ?? null,
@@ -412,15 +445,22 @@ export default function RunSummary({
         distanceMiles,
         paceSeconds: bestMileSeconds ?? derivedPaceSeconds,
         activitySeconds,
-        elapsedSeconds: Number.isFinite(image.metadata?.metrics?.elapsedTime)
-          ? Number(image.metadata?.metrics?.elapsedTime)
-          : null,
-        avgHeartRate: Number.isFinite(image.metadata?.metrics?.avgHeartRate)
-          ? Number(image.metadata?.metrics?.avgHeartRate)
-          : null,
-        maxHeartRate: Number.isFinite(image.metadata?.metrics?.maxHeartRate)
-          ? Number(image.metadata?.metrics?.maxHeartRate)
-          : null,
+        elapsedSeconds: n(m?.elapsedTime),
+        avgHeartRate: n(m?.avgHeartRate),
+        maxHeartRate: n(m?.maxHeartRate),
+        bestEfforts: {
+          best1MileSeconds: n(m?.best1MileSeconds),
+          best5KSeconds: n(m?.best5KSeconds),
+          best10KSeconds: n(m?.best10KSeconds),
+          best10MileSeconds: n(m?.best10MileSeconds),
+          best20KSeconds: n(m?.best20KSeconds),
+          bestHalfSeconds: n(m?.bestHalfSeconds),
+          best25KSeconds: n(m?.best25KSeconds),
+          best30KSeconds: n(m?.best30KSeconds),
+          best35KSeconds: n(m?.best35KSeconds),
+          best40KSeconds: n(m?.best40KSeconds),
+          bestMarathonSeconds: n(m?.bestMarathonSeconds),
+        },
       };
     });
 
@@ -825,6 +865,24 @@ export default function RunSummary({
                       {formatHeartRate(row.avgHeartRate, row.maxHeartRate)}
                     </span>
                   </span>
+                  <div className="run-summary-best-effort-grid">
+                    {BEST_EFFORT_COLS.map((col) => (
+                      <span
+                        key={`h-${col.key}`}
+                        className="run-summary-bef-cell run-summary-bef-header"
+                      >
+                        {col.label}
+                      </span>
+                    ))}
+                    {BEST_EFFORT_COLS.map((col) => (
+                      <span
+                        key={`v-${col.key}`}
+                        className="run-summary-bef-cell run-summary-bef-value"
+                      >
+                        {formatSeconds(row.bestEfforts[col.key])}
+                      </span>
+                    ))}
+                  </div>
                   <span className="run-summary-list-thumb-cell">
                     {renderThumbnail(
                       row.filename,
