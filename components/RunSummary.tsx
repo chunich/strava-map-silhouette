@@ -213,6 +213,8 @@ const BEST_EFFORT_COLS: { key: keyof BestEffortSeconds; label: string }[] = [
   { key: "bestMarathonSeconds", label: "Full" },
 ];
 
+type BestEffortColumnWinners = Record<keyof BestEffortSeconds, string | null>;
+
 function getDatePartsFromFilename(
   filename: string,
 ): { year: number; month: number; day: number } | null {
@@ -555,6 +557,31 @@ export default function RunSummary({
     }));
   }, [listRows]);
 
+  const bestEffortColumnWinners = useMemo<BestEffortColumnWinners>(() => {
+    const winners = Object.fromEntries(
+      BEST_EFFORT_COLS.map((col) => [col.key, null]),
+    ) as BestEffortColumnWinners;
+
+    for (const { key } of BEST_EFFORT_COLS) {
+      let bestValue: number | null = null;
+      let bestFilename: string | null = null;
+
+      for (const row of listRows) {
+        const value = row.bestEfforts[key];
+        if (!Number.isFinite(value) || value == null || value <= 0) continue;
+
+        if (bestValue == null || value < bestValue) {
+          bestValue = value;
+          bestFilename = row.filename;
+        }
+      }
+
+      winners[key] = bestFilename;
+    }
+
+    return winners;
+  }, [listRows]);
+
   const bestDistanceGlobal = useMemo(() => {
     let value: number | null = null;
     for (const run of allBadgeRuns) {
@@ -872,14 +899,32 @@ export default function RunSummary({
         <h2 className="accordion-heading">
           <button
             type="button"
-            className="accordion-toggle"
+            className="accordion-toggle run-summary-list-toggle"
             aria-expanded={openSummary === "list"}
             aria-controls="summary-list-panel"
             onClick={() =>
               setOpenSummary((current) => (current === "list" ? null : "list"))
             }
           >
-            <span>Runs ({listRowsCount})</span>
+            <span className="run-summary-list-toggle-title">
+              Runs ({listRowsCount})
+            </span>
+            <span className="run-summary-list-toggle-mix" aria-hidden="true">
+              <span className="run-summary-bar-wrapper">
+                {listBucketStats.map((bucket) => (
+                  <span
+                    key={`mix-toggle-${bucket.label}`}
+                    className="run-summary-bar-segment run-summary-mix-segment"
+                    style={{
+                      flex: Math.max(bucket.count, 0),
+                      background: bucket.color,
+                      minWidth: bucket.count > 0 ? "3px" : "0",
+                    }}
+                    data-tooltip={`${bucket.label} (${bucket.range}) - ${bucket.percent}%`}
+                  />
+                ))}
+              </span>
+            </span>
             <span className="accordion-icon" aria-hidden="true">
               {openSummary === "list" ? "-" : "+"}
             </span>
@@ -929,7 +974,11 @@ export default function RunSummary({
                     {BEST_EFFORT_COLS.map((col) => (
                       <span
                         key={`v-${col.key}`}
-                        className="run-summary-bef-cell run-summary-bef-value"
+                        className={`run-summary-bef-cell run-summary-bef-value ${
+                          bestEffortColumnWinners[col.key] === row.filename
+                            ? "highlight"
+                            : ""
+                        }`}
                       >
                         {formatSeconds(row.bestEfforts[col.key])}
                       </span>
@@ -943,31 +992,6 @@ export default function RunSummary({
                   </span>
                 </div>
               ))}
-            </div>
-
-            <div className="run-summary-list-block run-summary-bucket-block">
-              <h3 className="run-summary-list-title">Distance Buckets</h3>
-              <div className="run-summary-bucket-list">
-                {listBucketStats.map((bucket) => (
-                  <div key={bucket.label} className="run-summary-bucket-row">
-                    <span className="run-summary-bucket-label-wrap">
-                      <span
-                        className="run-summary-bucket-dot"
-                        style={{ background: bucket.color }}
-                      />
-                      <span className="run-summary-bucket-label">
-                        {bucket.label}
-                      </span>
-                      <span className="run-summary-bucket-range">
-                        {bucket.range}
-                      </span>
-                    </span>
-                    <span className="run-summary-bucket-percent">
-                      {bucket.percent}%
-                    </span>
-                  </div>
-                ))}
-              </div>
             </div>
           </div>
         </div>
