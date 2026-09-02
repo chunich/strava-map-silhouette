@@ -65,6 +65,42 @@ function formatHeartRate(avg: number | null, max: number | null): string {
   return `${avgLabel}/${maxLabel}`;
 }
 
+function formatCalendarDate(
+  year: number | null,
+  month: number | null,
+  day: number | null,
+): string {
+  if (
+    year == null ||
+    month == null ||
+    day == null ||
+    !Number.isInteger(year) ||
+    !Number.isInteger(month) ||
+    !Number.isInteger(day)
+  ) {
+    return "-";
+  }
+
+  const monthLabels = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sept",
+    "Oct",
+    "Nov",
+    "Dec",
+  ];
+  const label = monthLabels[month - 1];
+  if (!label) return "-";
+
+  return `${label} ${day}, ${year}`;
+}
+
 function parseMiles(image: ImageListItem): number | null {
   const raw = image.metadata?.titleLabel;
   if (raw == null) return null;
@@ -138,6 +174,8 @@ type RunListRow = {
   month: number | null;
   day: number | null;
   distanceMiles: number | null;
+  activityPaceSeconds: number | null;
+  elapsedPaceSeconds: number | null;
   paceSeconds: number | null;
   activitySeconds: number | null;
   elapsedSeconds: number | null;
@@ -188,6 +226,19 @@ function getDatePartsFromFilename(
   if (!Number.isInteger(day) || day < 1 || day > 31) return null;
 
   return { year, month, day };
+}
+
+function formatDateFromFilename(
+  filename: string | null,
+  fallbackYear: number,
+  fallbackMonth: number,
+): string {
+  const parts = filename ? getDatePartsFromFilename(filename) : null;
+  return formatCalendarDate(
+    parts?.year ?? fallbackYear,
+    parts?.month ?? fallbackMonth,
+    parts?.day ?? 1,
+  );
 }
 
 export default function RunSummary({
@@ -427,15 +478,15 @@ export default function RunSummary({
         distanceMiles != null && distanceMiles > 0 && activitySeconds != null
           ? activitySeconds / distanceMiles
           : null;
-      const bestMileSeconds = Number.isFinite(
-        image.metadata?.metrics?.bestMileSeconds,
-      )
-        ? Number(image.metadata?.metrics?.bestMileSeconds)
-        : null;
 
       const m = image.metadata?.metrics;
       const n = (v: number | null | undefined) =>
         Number.isFinite(v) ? Number(v) : null;
+      const elapsedSeconds = n(m?.elapsedTime);
+      const elapsedPaceSeconds =
+        distanceMiles != null && distanceMiles > 0 && elapsedSeconds != null
+          ? elapsedSeconds / distanceMiles
+          : null;
 
       return {
         filename: image.filename,
@@ -443,9 +494,11 @@ export default function RunSummary({
         month: parts?.month ?? null,
         day: parts?.day ?? null,
         distanceMiles,
-        paceSeconds: bestMileSeconds ?? derivedPaceSeconds,
+        activityPaceSeconds: derivedPaceSeconds,
+        elapsedPaceSeconds,
+        paceSeconds: derivedPaceSeconds,
         activitySeconds,
-        elapsedSeconds: n(m?.elapsedTime),
+        elapsedSeconds,
         avgHeartRate: n(m?.avgHeartRate),
         maxHeartRate: n(m?.maxHeartRate),
         bestEfforts: {
@@ -724,16 +777,18 @@ export default function RunSummary({
                   bestDistanceByYear.get(row.year),
                   bestDistanceGlobal,
                 );
+                const dateLabel = formatDateFromFilename(
+                  row.bestDistanceFilename,
+                  row.year,
+                  row.month,
+                );
 
                 return (
                   <div
                     key={`best-distance-${row.year}-${row.month}`}
                     className="run-summary-list-row"
                   >
-                    <span className="run-summary-list-year">{row.year}</span>
-                    <span className="run-summary-list-month">
-                      {MONTHS[row.month - 1]}
-                    </span>
+                    <span className="run-summary-list-date">{dateLabel}</span>
                     <span className="run-summary-list-badge-cell">
                       {badge ? (
                         <span
@@ -770,16 +825,18 @@ export default function RunSummary({
                   bestPaceByYear.get(row.year),
                   bestPaceGlobal,
                 );
+                const dateLabel = formatDateFromFilename(
+                  row.bestPaceFilename,
+                  row.year,
+                  row.month,
+                );
 
                 return (
                   <div
                     key={`best-pace-${row.year}-${row.month}`}
                     className="run-summary-list-row"
                   >
-                    <span className="run-summary-list-year">{row.year}</span>
-                    <span className="run-summary-list-month">
-                      {MONTHS[row.month - 1]}
-                    </span>
+                    <span className="run-summary-list-date">{dateLabel}</span>
                     <span className="run-summary-list-badge-cell">
                       {badge ? (
                         <span
@@ -844,20 +901,15 @@ export default function RunSummary({
                   key={`list-${row.filename}`}
                   className="run-summary-list-row"
                 >
-                  <span className="run-summary-list-year">
-                    {row.year ?? "-"}
-                  </span>
-                  <span className="run-summary-list-month">
-                    {row.month != null && row.day != null
-                      ? `${MONTHS[row.month - 1]} ${row.day}`
-                      : "-"}
+                  <span className="run-summary-list-date">
+                    {formatCalendarDate(row.year, row.month, row.day)}
                   </span>
                   <span className="run-summary-list-value">
                     {formatMiles(row.distanceMiles)}
                   </span>
                   <span className="run-summary-list-value-secondary">
                     <span className="run-summary-list-pace">
-                      {formatPace(row.paceSeconds)}
+                      {formatPace(row.activityPaceSeconds)}
                     </span>
                     <span className="run-summary-list-meta">
                       Act {formatSeconds(row.activitySeconds)} · Elap{" "}

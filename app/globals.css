@@ -672,7 +672,7 @@ a {
   display: grid;
   gap: 0.5rem;
   grid-template-columns:
-    3.5rem 4.4rem minmax(2.2rem, 0.4fr) minmax(6rem, 1.8fr)
+    minmax(7.2rem, 1.1fr) minmax(2.2rem, 0.4fr) minmax(6rem, 1.8fr)
     2.25rem;
   padding: 0.35rem 0.7rem;
 }
@@ -681,22 +681,18 @@ a {
   border-top: none;
 }
 
-.run-summary-list-year {
+.run-summary-list-date {
   color: #e4eaf4;
-  font-size: 0.82rem;
+  font-size: 0.78rem;
   font-weight: 700;
-}
-
-.run-summary-list-month {
-  color: #b8c6d8;
-  font-size: 0.8rem;
-  font-weight: 600;
+  white-space: nowrap;
 }
 
 .run-summary-list-value {
   color: #f1f5fb;
   font-size: 0.84rem;
   font-weight: 700;
+  white-space: nowrap;
 }
 
 .run-summary-list-value-stack {
@@ -792,8 +788,8 @@ a {
 
 .run-summary-list-content .run-summary-list-row {
   grid-template-columns:
-    3.5rem 4.4rem minmax(2.2rem, 0.4fr) minmax(6rem, 1.8fr)
-    1fr 2.25rem;
+    minmax(6.6rem, 0.95fr) minmax(3.2rem, 0.55fr) minmax(5.6rem, 1.45fr)
+    1.2fr 2.25rem;
 }
 
 .run-summary-best-effort-grid {
@@ -971,7 +967,7 @@ a {
 
   .run-summary-list-row {
     grid-template-columns:
-      2.8rem 2.4rem minmax(2rem, 0.35fr) minmax(5.2rem, 1.75fr)
+      minmax(6rem, 1fr) minmax(2rem, 0.35fr) minmax(5.2rem, 1.75fr)
       2.1rem;
     gap: 0.35rem;
     padding: 0.3rem 0.45rem;
@@ -979,8 +975,8 @@ a {
 
   .run-summary-list-content .run-summary-list-row {
     grid-template-columns:
-      2.8rem 2.4rem minmax(2rem, 0.35fr) minmax(5.2rem, 1.75fr)
-      1fr 2.1rem;
+      minmax(5.8rem, 0.9fr) minmax(3rem, 0.5fr) minmax(4.8rem, 1.25fr)
+      1.2fr 2.1rem;
   }
 
   .run-summary-list-content .run-summary-bucket-block {
