@@ -838,7 +838,7 @@ a {
 }
 
 .run-summary-bef-cell {
-  font-size: 0.58rem;
+  font-size: 0.75rem;
   overflow: hidden;
   padding: 0.1rem 0.12rem;
   text-align: center;
@@ -852,10 +852,26 @@ a {
   font-weight: 600;
 }
 
+.run-summary-bef-header.run-summary-bef-col-a {
+  background: rgba(40, 54, 74, 0.42);
+}
+
+.run-summary-bef-header.run-summary-bef-col-b {
+  background: rgba(29, 41, 58, 0.42);
+}
+
 .run-summary-bef-value {
   color: #d4e2f4;
   font-weight: 700;
   white-space: normal;
+}
+
+.run-summary-bef-value.run-summary-bef-col-a {
+  background: rgba(21, 30, 43, 0.45);
+}
+
+.run-summary-bef-value.run-summary-bef-col-b {
+  background: rgba(15, 24, 35, 0.45);
 }
 
 .run-summary-bef-value-stack {
@@ -868,7 +884,7 @@ a {
 
 .run-summary-bef-pace {
   color: #d4e2f4;
-  font-size: 0.58rem;
+  font-size: 0.75rem;
   font-weight: 700;
   white-space: nowrap;
 }

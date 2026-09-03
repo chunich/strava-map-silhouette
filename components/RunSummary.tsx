@@ -961,21 +961,29 @@ export default function RunSummary({
                     )}
                   </span>
                   <div className="run-summary-best-effort-grid">
-                    {BEST_EFFORT_COLS.map((col) => (
+                    {BEST_EFFORT_COLS.map((col, index) => (
                       <span
                         key={`h-${col.key}`}
-                        className="run-summary-bef-cell run-summary-bef-header"
+                        className={`run-summary-bef-cell run-summary-bef-header ${
+                          index % 2 === 0
+                            ? "run-summary-bef-col-a"
+                            : "run-summary-bef-col-b"
+                        }`}
                       >
                         {col.label}
                       </span>
                     ))}
-                    {BEST_EFFORT_COLS.map((col) =>
+                    {BEST_EFFORT_COLS.map((col, index) =>
                       (() => {
                         const effortSeconds = row.bestEfforts[col.key];
                         return (
                           <span
                             key={`v-${col.key}`}
                             className={`run-summary-bef-cell run-summary-bef-value ${
+                              index % 2 === 0
+                                ? "run-summary-bef-col-a"
+                                : "run-summary-bef-col-b"
+                            } ${
                               bestEffortColumnWinners[col.key] === row.filename
                                 ? "highlight"
                                 : ""
