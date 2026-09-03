@@ -775,6 +775,7 @@ a {
 }
 
 .run-summary-list-thumb-cell {
+  align-items: center;
   display: flex;
   justify-content: flex-end;
 }
@@ -803,20 +804,43 @@ a {
 }
 
 .run-summary-list-content .run-summary-list-row {
-  grid-template-columns:
-    minmax(6.6rem, 0.95fr) minmax(3.2rem, 0.55fr) minmax(5.6rem, 1.45fr)
-    1.2fr 2.25rem;
+  align-items: start;
+  column-gap: 0.35rem;
+  grid-template-columns: 7.2rem 4.2rem 8.2rem 2.25rem minmax(0, 1fr);
+}
+
+.run-summary-list-content .run-summary-list-date,
+.run-summary-list-content .run-summary-list-value {
+  align-self: center;
+  justify-self: start;
+}
+
+.run-summary-list-content .run-summary-list-value-secondary {
+  align-self: start;
+  justify-self: start;
+}
+
+.run-summary-list-content .run-summary-thumb,
+.run-summary-list-content .run-summary-thumb-placeholder {
+  height: 2.5rem;
+  width: 2.5rem;
+}
+
+.run-summary-list-content .run-summary-list-thumb-cell {
+  align-self: center;
 }
 
 .run-summary-best-effort-grid {
   display: grid;
   grid-template-columns: repeat(11, minmax(2.6rem, 1fr));
+  gap: 0.08rem;
+  margin-left: 0.2rem;
 }
 
 .run-summary-bef-cell {
-  font-size: 0.6rem;
+  font-size: 0.58rem;
   overflow: hidden;
-  padding: 0.08rem 0.12rem;
+  padding: 0.1rem 0.12rem;
   text-align: center;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -831,11 +855,39 @@ a {
 .run-summary-bef-value {
   color: #d4e2f4;
   font-weight: 700;
+  white-space: normal;
+}
+
+.run-summary-bef-value-stack {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 0.08rem;
+  line-height: 1.15;
+}
+
+.run-summary-bef-pace {
+  color: #d4e2f4;
+  font-size: 0.58rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.run-summary-bef-time {
+  color: #91a4bf;
+  font-size: 0.56rem;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
 .run-summary-bef-value.highlight {
   background: #1e4d2f;
   border-radius: 4px;
+  color: #ecf8ef;
+}
+
+.run-summary-bef-value.highlight .run-summary-bef-pace,
+.run-summary-bef-value.highlight .run-summary-bef-time {
   color: #ecf8ef;
 }
 
@@ -996,9 +1048,15 @@ a {
   }
 
   .run-summary-list-content .run-summary-list-row {
-    grid-template-columns:
-      minmax(5.8rem, 0.9fr) minmax(3rem, 0.5fr) minmax(4.8rem, 1.25fr)
-      1.2fr 2.1rem;
+    align-items: start;
+    column-gap: 0.3rem;
+    grid-template-columns: 6.6rem 3.8rem 7.2rem 2.1rem minmax(0, 1fr);
+  }
+
+  .run-summary-list-content .run-summary-thumb,
+  .run-summary-list-content .run-summary-thumb-placeholder {
+    height: 2.2rem;
+    width: 2.2rem;
   }
 
   .run-summary-list-toggle {

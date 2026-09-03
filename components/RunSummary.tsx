@@ -199,18 +199,22 @@ type MonthlySummary = {
   listThumbnailFilename: string | null;
 };
 
-const BEST_EFFORT_COLS: { key: keyof BestEffortSeconds; label: string }[] = [
-  { key: "best1MileSeconds", label: "1mi" },
-  { key: "best5KSeconds", label: "5K" },
-  { key: "best10KSeconds", label: "10K" },
-  { key: "best10MileSeconds", label: "10mi" },
-  { key: "best20KSeconds", label: "20K" },
-  { key: "bestHalfSeconds", label: "Half" },
-  { key: "best25KSeconds", label: "25K" },
-  { key: "best30KSeconds", label: "30K" },
-  { key: "best35KSeconds", label: "35K" },
-  { key: "best40KSeconds", label: "40K" },
-  { key: "bestMarathonSeconds", label: "Full" },
+const BEST_EFFORT_COLS: {
+  key: keyof BestEffortSeconds;
+  label: string;
+  miles: number;
+}[] = [
+  { key: "best1MileSeconds", label: "1mi", miles: 1.0 },
+  { key: "best5KSeconds", label: "5K", miles: 3.10686 },
+  { key: "best10KSeconds", label: "10K", miles: 6.21371 },
+  { key: "best10MileSeconds", label: "10mi", miles: 10.0 },
+  { key: "best20KSeconds", label: "20K", miles: 12.4274 },
+  { key: "bestHalfSeconds", label: "Half", miles: 13.1094 },
+  { key: "best25KSeconds", label: "25K", miles: 15.534 },
+  { key: "best30KSeconds", label: "30K", miles: 18.6411 },
+  { key: "best35KSeconds", label: "35K", miles: 21.748 },
+  { key: "best40KSeconds", label: "40K", miles: 24.8548 },
+  { key: "bestMarathonSeconds", label: "Full", miles: 26.2188 },
 ];
 
 type BestEffortColumnWinners = Record<keyof BestEffortSeconds, string | null>;
@@ -663,13 +667,6 @@ export default function RunSummary({
   const scopedBestMileSeconds =
     bestMileSeconds.length > 0 ? Math.min(...bestMileSeconds) : null;
 
-  const scopeLabel =
-    activeYear === "ALL"
-      ? "All years"
-      : activeMonth === "ALL"
-        ? `All months in ${activeYear}`
-        : `${MONTHS[activeMonth - 1]} ${activeYear}`;
-
   const listRowsCount = listRows.length;
 
   function getBadge(
@@ -753,20 +750,15 @@ export default function RunSummary({
         )}
       </div>
 
-      <p className="run-summary-scope">
-        Scope: <strong>{scopeLabel}</strong> ({total} run
-        {total === 1 ? "" : "s"})
-      </p>
-
       <div className="run-summary-metrics" aria-label="FIT metrics summary">
         <span className="run-summary-metric-chip">
           FIT metrics: <strong>{availableMetricActivities}</strong>/{total}
         </span>
         <span className="run-summary-metric-chip">
-          Avg HR: <strong>{scopedAverageHeartRate ?? "-"}</strong>
+          Avg {"♥"}: <strong>{scopedAverageHeartRate ?? "-"}</strong>
         </span>
         <span className="run-summary-metric-chip">
-          Max HR: <strong>{scopedMaxHeartRate ?? "-"}</strong>
+          Max {"♥"}: <strong>{scopedMaxHeartRate ?? "-"}</strong>
         </span>
         <span className="run-summary-metric-chip">
           Best mile: <strong>{formatSeconds(scopedBestMileSeconds)}</strong>
@@ -958,9 +950,15 @@ export default function RunSummary({
                     </span>
                     <span className="run-summary-list-meta">
                       Act {formatSeconds(row.activitySeconds)} · Elap{" "}
-                      {formatSeconds(row.elapsedSeconds)} · HR{" "}
+                      {formatSeconds(row.elapsedSeconds)} · {"♥"}{" "}
                       {formatHeartRate(row.avgHeartRate, row.maxHeartRate)}
                     </span>
+                  </span>
+                  <span className="run-summary-list-thumb-cell">
+                    {renderThumbnail(
+                      row.filename,
+                      `${row.filename} run summary`,
+                    )}
                   </span>
                   <div className="run-summary-best-effort-grid">
                     {BEST_EFFORT_COLS.map((col) => (
@@ -971,25 +969,35 @@ export default function RunSummary({
                         {col.label}
                       </span>
                     ))}
-                    {BEST_EFFORT_COLS.map((col) => (
-                      <span
-                        key={`v-${col.key}`}
-                        className={`run-summary-bef-cell run-summary-bef-value ${
-                          bestEffortColumnWinners[col.key] === row.filename
-                            ? "highlight"
-                            : ""
-                        }`}
-                      >
-                        {formatSeconds(row.bestEfforts[col.key])}
-                      </span>
-                    ))}
-                  </div>
-                  <span className="run-summary-list-thumb-cell">
-                    {renderThumbnail(
-                      row.filename,
-                      `${row.filename} run summary`,
+                    {BEST_EFFORT_COLS.map((col) =>
+                      (() => {
+                        const effortSeconds = row.bestEfforts[col.key];
+                        return (
+                          <span
+                            key={`v-${col.key}`}
+                            className={`run-summary-bef-cell run-summary-bef-value ${
+                              bestEffortColumnWinners[col.key] === row.filename
+                                ? "highlight"
+                                : ""
+                            }`}
+                          >
+                            <span className="run-summary-bef-value-stack">
+                              <span className="run-summary-bef-pace">
+                                {formatPace(
+                                  effortSeconds != null
+                                    ? effortSeconds / col.miles
+                                    : null,
+                                )}
+                              </span>
+                              <span className="run-summary-bef-time">
+                                {formatSeconds(effortSeconds)}
+                              </span>
+                            </span>
+                          </span>
+                        );
+                      })(),
                     )}
-                  </span>
+                  </div>
                 </div>
               ))}
             </div>
