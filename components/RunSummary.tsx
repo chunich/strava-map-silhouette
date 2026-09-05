@@ -3,6 +3,10 @@
 import { useMemo, useState } from "react";
 import Image from "next/image";
 import type { ImageListItem } from "@/lib/api-types";
+import RunCalendar, {
+  type CalendarDayInfo,
+  type CalendarYearOverviewMonth,
+} from "@/components/RunCalendar";
 
 type DistanceBucketDef = {
   label: string;
@@ -245,6 +249,14 @@ function formatDateFromFilename(
     parts?.month ?? fallbackMonth,
     parts?.day ?? 1,
   );
+}
+
+function getDaysInMonth(year: number, month: number): number {
+  return new Date(year, month, 0).getDate();
+}
+
+function getFirstWeekdayOfMonth(year: number, month: number): number {
+  return new Date(year, month - 1, 1).getDay();
 }
 
 export default function RunSummary({
@@ -526,6 +538,60 @@ export default function RunSummary({
     return rows.sort((a, b) => b.filename.localeCompare(a.filename));
   }, [filteredImages]);
 
+  const calendarDayMap = useMemo(() => {
+    const map = new Map<number, CalendarDayInfo>();
+    if (typeof activeYear !== "number" || typeof activeMonth !== "number") {
+      return map;
+    }
+
+    const ascendingRows = [...listRows].sort((a, b) =>
+      a.filename.localeCompare(b.filename),
+    );
+
+    for (const row of ascendingRows) {
+      if (row.day == null) continue;
+
+      const existing = map.get(row.day);
+      if (existing) {
+        existing.totalMiles += row.distanceMiles ?? 0;
+        existing.runCount += 1;
+      } else {
+        map.set(row.day, {
+          totalMiles: row.distanceMiles ?? 0,
+          runCount: 1,
+          thumbnailFilename: row.filename,
+        });
+      }
+    }
+
+    return map;
+  }, [activeYear, activeMonth, listRows]);
+
+  const calendarYearOverview = useMemo<CalendarYearOverviewMonth[]>(() => {
+    if (typeof activeYear !== "number" || activeMonth !== "ALL") return [];
+
+    const perMonth: Record<number, Record<number, number>> = {};
+    for (const image of images) {
+      const parts = getDatePartsFromFilename(image.filename);
+      if (!parts || parts.year !== activeYear) continue;
+
+      perMonth[parts.month] = perMonth[parts.month] || {};
+      perMonth[parts.month][parts.day] =
+        (perMonth[parts.month][parts.day] || 0) + 1;
+    }
+
+    return MONTHS.map((label, index) => {
+      const month = index + 1;
+      return {
+        month,
+        label,
+        daysInMonth: getDaysInMonth(activeYear, month),
+        firstWeekday: getFirstWeekdayOfMonth(activeYear, month),
+        dayRunCounts: perMonth[month] || {},
+      };
+    });
+  }, [activeYear, activeMonth, images]);
+
   const listTotalMiles = useMemo(() => {
     let totalMiles = 0;
     let hasDistance = false;
@@ -688,7 +754,7 @@ export default function RunSummary({
                 className={`run-summary-chip ${isSelected ? "active" : ""}`}
                 onClick={() => onYearChange(yearTab)}
               >
-                {yearTab} <span className="chip-count">({count})</span>
+                {yearTab} <span className="chip-count">{count}</span>
               </button>
             );
           })}
@@ -713,10 +779,32 @@ export default function RunSummary({
                   className={`run-summary-chip month-chip ${isMonthSelected ? "active" : ""} ${isMonthDisabled ? "disabled" : ""}`}
                   onClick={() => onMonthChange(month)}
                 >
-                  {monthName} <span className="chip-count">({monthCount})</span>
+                  {monthName} <span className="chip-count">{monthCount}</span>
                 </button>
               );
             })}
+          </div>
+        )}
+
+        {activeYear !== "ALL" && openSummary !== "best" && (
+          <div className="run-summary-calendar-wrapper">
+            <RunCalendar
+              activeYear={activeYear}
+              activeMonth={activeMonth}
+              dayMap={calendarDayMap}
+              daysInMonth={
+                typeof activeMonth === "number"
+                  ? getDaysInMonth(activeYear, activeMonth)
+                  : 0
+              }
+              firstWeekday={
+                typeof activeMonth === "number"
+                  ? getFirstWeekdayOfMonth(activeYear, activeMonth)
+                  : 0
+              }
+              yearOverview={calendarYearOverview}
+              renderThumbnail={renderThumbnail}
+            />
           </div>
         )}
       </div>
