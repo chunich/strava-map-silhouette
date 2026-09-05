@@ -635,37 +635,6 @@ export default function RunSummary({
   }, [allBadgeRuns]);
 
   if (images.length === 0) return null;
-  const total = filteredImages.length;
-
-  const metricRows = filteredImages
-    .map((image) => image.metadata?.metrics)
-    .filter(
-      (metrics): metrics is NonNullable<ImageListItem["metadata"]>["metrics"] =>
-        Boolean(metrics),
-    );
-
-  const availableMetricActivities = metricRows.length;
-  const avgHeartRates = metricRows
-    .map((metrics) => metrics?.avgHeartRate)
-    .filter((value): value is number => Number.isFinite(value));
-  const maxHeartRates = metricRows
-    .map((metrics) => metrics?.maxHeartRate)
-    .filter((value): value is number => Number.isFinite(value));
-  const bestMileSeconds = metricRows
-    .map((metrics) => metrics?.bestMileSeconds)
-    .filter((value): value is number => Number.isFinite(value));
-
-  const scopedAverageHeartRate =
-    avgHeartRates.length > 0
-      ? Math.round(
-          avgHeartRates.reduce((sum, value) => sum + value, 0) /
-            avgHeartRates.length,
-        )
-      : null;
-  const scopedMaxHeartRate =
-    maxHeartRates.length > 0 ? Math.max(...maxHeartRates) : null;
-  const scopedBestMileSeconds =
-    bestMileSeconds.length > 0 ? Math.min(...bestMileSeconds) : null;
 
   const listRowsCount = listRows.length;
 
@@ -750,21 +719,6 @@ export default function RunSummary({
             })}
           </div>
         )}
-      </div>
-
-      <div className="run-summary-metrics" aria-label="FIT metrics summary">
-        <span className="run-summary-metric-chip">
-          FIT metrics: <strong>{availableMetricActivities}</strong>/{total}
-        </span>
-        <span className="run-summary-metric-chip">
-          Avg {"♥"}: <strong>{scopedAverageHeartRate ?? "-"}</strong>
-        </span>
-        <span className="run-summary-metric-chip">
-          Max {"♥"}: <strong>{scopedMaxHeartRate ?? "-"}</strong>
-        </span>
-        <span className="run-summary-metric-chip">
-          Best mile: <strong>{formatSeconds(scopedBestMileSeconds)}</strong>
-        </span>
       </div>
 
       <section className="dashboard-section run-summary-panel-section">
