@@ -734,12 +734,14 @@ export default function RunSummary({
             })).map(({ monthName, month }) => {
               const isMonthSelected = activeMonth === month;
               const monthCount = monthCounts[month] || 0;
+              const isMonthDisabled = monthCount === 0;
 
               return (
                 <button
                   key={`${activeYear}-${monthName}`}
                   type="button"
-                  className={`run-summary-chip month-chip ${isMonthSelected ? "active" : ""}`}
+                  disabled={isMonthDisabled}
+                  className={`run-summary-chip month-chip ${isMonthSelected ? "active" : ""} ${isMonthDisabled ? "disabled" : ""}`}
                   onClick={() => onMonthChange(month)}
                 >
                   {monthName} <span className="chip-count">({monthCount})</span>

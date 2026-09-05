@@ -593,6 +593,16 @@ a {
   padding: 0.2rem 0.4rem;
 }
 
+.run-summary-month-chips .run-summary-chip:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.run-summary-month-chips .run-summary-chip:disabled:hover {
+  border-color: #2d3a4d;
+  color: #b8c6d8;
+}
+
 .run-summary {
   display: flex;
   flex-direction: column;
