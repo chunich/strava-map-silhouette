@@ -64,7 +64,7 @@ export default function ImageGallery({
   const hoveredCategoryRef = useRef<number | null>(null);
   const gridRef = useRef<HTMLDivElement>(null);
 
-  // Filter images based on selected year/month, then sort newest first.
+  // Filter images based on selected year/month, then sort oldest first.
   const filteredImages = useMemo(() => {
     const scopedImages = images.filter((image) => {
       if (activeYear === "ALL") return true;
@@ -80,7 +80,7 @@ export default function ImageGallery({
     });
 
     return [...scopedImages].sort((a, b) =>
-      b.filename.localeCompare(a.filename),
+      a.filename.localeCompare(b.filename),
     );
   }, [images, activeYear, activeMonth]);
 

@@ -200,17 +200,6 @@ a {
   width: 1.4rem;
 }
 
-.run-summary-list-toggle {
-  align-items: center;
-  column-gap: 0.75rem;
-  display: grid;
-  grid-template-columns: auto minmax(7rem, 1fr) auto;
-}
-
-.run-summary-list-toggle-title {
-  white-space: nowrap;
-}
-
 .run-summary-list-toggle-mix {
   display: inline-flex;
   min-width: 0;
@@ -533,6 +522,36 @@ a {
   margin: 1rem 0 0.5rem;
 }
 
+.run-summary-view-switcher {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.75rem;
+}
+
+.run-summary-view-btn {
+  background: #212a37;
+  border: solid 1px #3b4758;
+  border-radius: 999px;
+  color: #b8c6d8;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 0.35rem 0.9rem;
+  transition: all 0.15s ease;
+}
+
+.run-summary-view-btn:hover {
+  border-color: #5f738f;
+  color: #d5deeb;
+}
+
+.run-summary-view-btn.active {
+  background: #32435c;
+  border-color: #86a6ce;
+  color: #f3f7fd;
+}
+
 .run-summary-filter-chips {
   display: flex;
   gap: 1rem;
@@ -540,17 +559,36 @@ a {
   margin-bottom: 0.75rem;
 }
 
-.run-summary-calendar-wrapper {
+.run-summary-panel-wrapper {
   flex: 1 1 auto;
   min-width: 0;
+}
+
+.run-summary-panel-empty {
+  color: #7f93ad;
+  font-size: 0.85rem;
+  padding: 1rem 0;
+}
+
+.run-summary-gallery-view {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.run-summary-gallery-controls {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
 }
 
 .run-summary-year-chips {
   display: flex;
   flex-direction: column;
   gap: 0.3rem;
-  flex: 0 0 140px;
-  width: 140px;
+  flex: 0 0 110px;
+  width: 110px;
 }
 
 .run-summary-year-chips .run-summary-chip {
@@ -606,8 +644,8 @@ a {
   display: flex;
   flex-direction: column;
   gap: 0.3rem;
-  flex: 0 0 180px;
-  width: 180px;
+  flex: 0 0 150px;
+  width: 150px;
 }
 
 .run-summary-month-chips .run-summary-chip {
@@ -819,6 +857,7 @@ a {
 .run-summary-list-content .run-summary-list-block {
   flex: 1 1 auto;
   min-width: 0;
+  overflow-x: auto;
 }
 
 .run-summary-list-title {
@@ -832,15 +871,23 @@ a {
 }
 
 .run-summary-list-total {
+  align-items: center;
   background: #1a2432;
   border-bottom: solid 1px #263244;
   color: #b9c8dc;
+  display: flex;
   font-size: 0.78rem;
+  gap: 0.75rem;
   padding: 0.38rem 0.7rem;
 }
 
 .run-summary-list-total strong {
   color: #f3f7fd;
+}
+
+.run-summary-list-total .run-summary-list-toggle-mix {
+  flex: 1 1 auto;
+  max-width: 16rem;
 }
 
 .run-summary-list-row {
@@ -967,13 +1014,15 @@ a {
 .run-summary-list-content .run-summary-list-row {
   align-items: start;
   column-gap: 0.35rem;
-  grid-template-columns: 7.2rem 4.2rem 8.2rem 2.25rem minmax(0, 1fr);
+  grid-template-columns: 2.4rem 4.2rem 8.2rem 2.25rem minmax(42.5rem, 1fr);
+  min-width: max-content;
 }
 
 .run-summary-list-content .run-summary-list-date,
 .run-summary-list-content .run-summary-list-value {
   align-self: center;
-  justify-self: start;
+  justify-self: end;
+  text-align: right;
 }
 
 .run-summary-list-content .run-summary-list-value-secondary {
@@ -991,17 +1040,22 @@ a {
   align-self: center;
 }
 
+.run-summary-best-effort-wrapper {
+  min-width: 0;
+}
+
 .run-summary-best-effort-grid {
   display: grid;
-  grid-template-columns: repeat(11, minmax(2.6rem, 1fr));
-  gap: 0.08rem;
+  grid-template-columns: repeat(11, minmax(3.75rem, 1fr));
+  gap: 0.15rem;
   margin-left: 0.2rem;
+  min-width: 42rem;
 }
 
 .run-summary-bef-cell {
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   overflow: hidden;
-  padding: 0.1rem 0.12rem;
+  padding: 0.2rem 0.25rem;
   text-align: center;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1045,14 +1099,14 @@ a {
 
 .run-summary-bef-pace {
   color: #d4e2f4;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   font-weight: 700;
   white-space: nowrap;
 }
 
 .run-summary-bef-time {
   color: #91a4bf;
-  font-size: 0.56rem;
+  font-size: 0.64rem;
   font-weight: 600;
   white-space: nowrap;
 }
@@ -1227,19 +1281,14 @@ a {
   .run-summary-list-content .run-summary-list-row {
     align-items: start;
     column-gap: 0.3rem;
-    grid-template-columns: 6.6rem 3.8rem 7.2rem 2.1rem minmax(0, 1fr);
+    grid-template-columns: 2.2rem 3.8rem 7.2rem 2.1rem minmax(42.5rem, 1fr);
+    min-width: max-content;
   }
 
   .run-summary-list-content .run-summary-thumb,
   .run-summary-list-content .run-summary-thumb-placeholder {
     height: 2.2rem;
     width: 2.2rem;
-  }
-
-  .run-summary-list-toggle {
-    column-gap: 0.55rem;
-    grid-template-columns: auto minmax(4.5rem, 1fr) auto;
-    padding-right: 0.7rem;
   }
 
   .run-summary-list-title {

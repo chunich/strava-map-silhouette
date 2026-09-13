@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import Image from "next/image";
 import type { ImageListItem } from "@/lib/api-types";
+import ImageGallery from "@/components/ImageGallery";
 import RunCalendar, {
   type CalendarDayInfo,
   type CalendarYearOverviewMonth,
@@ -105,6 +106,22 @@ function formatCalendarDate(
   return `${label} ${day}, ${year}`;
 }
 
+function formatOrdinalDay(day: number | null): string {
+  if (day == null || !Number.isInteger(day) || day < 1) return "-";
+
+  const remainderTen = day % 10;
+  const remainderHundred = day % 100;
+
+  let suffix = "th";
+  if (remainderHundred < 11 || remainderHundred > 13) {
+    if (remainderTen === 1) suffix = "st";
+    else if (remainderTen === 2) suffix = "nd";
+    else if (remainderTen === 3) suffix = "rd";
+  }
+
+  return `${day}${suffix}`;
+}
+
 function parseMiles(image: ImageListItem): number | null {
   const raw = image.metadata?.titleLabel;
   if (raw == null) return null;
@@ -118,12 +135,24 @@ function isSameValue(a: number | null, b: number | null): boolean {
   return Math.abs(a - b) < 1e-9;
 }
 
+export type SummaryView = "calendar" | "gallery" | "best" | "runs";
+
 type RunSummaryProps = {
   images: ImageListItem[];
   activeYear: YearTab;
   activeMonth: MonthTab;
   onYearChange: (year: YearTab) => void;
   onMonthChange: (month: MonthTab) => void;
+  activeView: SummaryView;
+  onViewChange: (view: SummaryView) => void;
+  hideFilenames: boolean;
+  showImageOverlay: boolean;
+  imageColumns: number;
+  onToggleFilenames: (checked: boolean) => void;
+  onToggleImageOverlay: (checked: boolean) => void;
+  onImageColumnsChange: (nextValue: number) => void;
+  imagesLoading?: boolean;
+  imageError?: string | null;
 };
 
 const MONTHS = [
@@ -143,7 +172,6 @@ const MONTHS = [
 
 type YearTab = "ALL" | number;
 type MonthTab = "ALL" | number;
-type SummaryAccordion = "best" | "list" | null;
 
 type RunPoint = {
   filename: string;
@@ -265,9 +293,17 @@ export default function RunSummary({
   activeMonth,
   onYearChange,
   onMonthChange,
+  activeView,
+  onViewChange,
+  hideFilenames,
+  showImageOverlay,
+  imageColumns,
+  onToggleFilenames,
+  onToggleImageOverlay,
+  onImageColumnsChange,
+  imagesLoading,
+  imageError,
 }: RunSummaryProps) {
-  const [openSummary, setOpenSummary] = useState<SummaryAccordion>("list");
-
   const yearTabs = useMemo(() => {
     const years = new Set<number>();
     for (const image of images) {
@@ -740,6 +776,28 @@ export default function RunSummary({
       className="run-summary-section"
       aria-label="Run summary by distance, year, and month"
     >
+      <div className="run-summary-view-switcher" role="tablist">
+        {(
+          [
+            { view: "calendar", label: "Calendar" },
+            { view: "gallery", label: "Gallery" },
+            { view: "best", label: "Best" },
+            { view: "runs", label: `Runs (${listRowsCount})` },
+          ] as { view: SummaryView; label: string }[]
+        ).map(({ view, label }) => (
+          <button
+            key={view}
+            type="button"
+            role="tab"
+            aria-selected={activeView === view}
+            className={`run-summary-view-btn ${activeView === view ? "active" : ""}`}
+            onClick={() => onViewChange(view)}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
       <div className="run-summary-filter-chips">
         <div className="run-summary-year-chips">
           {yearTabs.map((yearTab) => {
@@ -760,7 +818,7 @@ export default function RunSummary({
           })}
         </div>
 
-        {activeYear !== "ALL" && openSummary !== "best" && (
+        {activeYear !== "ALL" && activeView !== "best" && (
           // Hide month chips while BEST is open to reinforce year-only BEST scope.
           <div className="run-summary-month-chips">
             {MONTHS.map((monthName, index) => ({
@@ -786,276 +844,295 @@ export default function RunSummary({
           </div>
         )}
 
-        {activeYear !== "ALL" && openSummary !== "best" && (
-          <div className="run-summary-calendar-wrapper">
-            <RunCalendar
-              activeYear={activeYear}
-              activeMonth={activeMonth}
-              dayMap={calendarDayMap}
-              daysInMonth={
-                typeof activeMonth === "number"
-                  ? getDaysInMonth(activeYear, activeMonth)
-                  : 0
-              }
-              firstWeekday={
-                typeof activeMonth === "number"
-                  ? getFirstWeekdayOfMonth(activeYear, activeMonth)
-                  : 0
-              }
-              yearOverview={calendarYearOverview}
-              renderThumbnail={renderThumbnail}
-            />
-          </div>
-        )}
-      </div>
+        <div className="run-summary-panel-wrapper">
+          {activeView === "calendar" &&
+            (activeYear !== "ALL" ? (
+              <RunCalendar
+                activeYear={activeYear}
+                activeMonth={activeMonth}
+                dayMap={calendarDayMap}
+                daysInMonth={
+                  typeof activeMonth === "number"
+                    ? getDaysInMonth(activeYear, activeMonth)
+                    : 0
+                }
+                firstWeekday={
+                  typeof activeMonth === "number"
+                    ? getFirstWeekdayOfMonth(activeYear, activeMonth)
+                    : 0
+                }
+                yearOverview={calendarYearOverview}
+                renderThumbnail={renderThumbnail}
+              />
+            ) : (
+              <div className="run-summary-panel-empty">
+                Select a year to see the calendar.
+              </div>
+            ))}
 
-      <section className="dashboard-section run-summary-panel-section">
-        <h2 className="accordion-heading">
-          <button
-            type="button"
-            className="accordion-toggle"
-            aria-expanded={openSummary === "best"}
-            aria-controls="summary-best-panel"
-            onClick={() =>
-              setOpenSummary((current) => (current === "best" ? null : "best"))
-            }
-          >
-            <span>Best Distance / Pace</span>
-            <span className="accordion-icon" aria-hidden="true">
-              {openSummary === "best" ? "-" : "+"}
-            </span>
-          </button>
-        </h2>
-        <div
-          id="summary-best-panel"
-          className={`accordion-panel ${openSummary === "best" ? "expanded" : "collapsed"}`}
-          aria-hidden={openSummary !== "best"}
-        >
-          <div className="accordion-panel-content run-summary-best-content">
-            <div className="run-summary-list-block">
-              <h3 className="run-summary-list-title">Best Distance</h3>
-              {monthlySummaries.map((row) => {
-                const badge = getBadge(
-                  row.bestDistanceMiles,
-                  bestDistanceByYear.get(row.year),
-                  bestDistanceGlobal,
-                );
-                const dateLabel = formatDateFromFilename(
-                  row.bestDistanceFilename,
-                  row.year,
-                  row.month,
-                );
-
-                return (
-                  <div
-                    key={`best-distance-${row.year}-${row.month}`}
-                    className="run-summary-list-row"
-                  >
-                    <span className="run-summary-list-date">{dateLabel}</span>
-                    <span className="run-summary-list-badge-cell">
-                      {badge ? (
-                        <span
-                          className={`run-summary-badge ${badge === "PB" ? "pb" : "sb"}`}
-                        >
-                          {badge}
-                        </span>
-                      ) : (
-                        "-"
-                      )}
-                    </span>
-                    <span className="run-summary-list-value run-summary-list-value-stack">
-                      <span>{formatMiles(row.bestDistanceMiles)}</span>
-                      <span className="run-summary-list-subvalue">
-                        {formatPace(row.bestDistancePaceSeconds)}
-                      </span>
-                    </span>
-                    <span className="run-summary-list-thumb-cell">
-                      {renderThumbnail(
-                        row.bestDistanceFilename,
-                        `${row.year}-${String(row.month).padStart(2, "0")} best distance`,
-                      )}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-
-            <div className="run-summary-list-block">
-              <h3 className="run-summary-list-title">Best Pace</h3>
-              {monthlySummaries.map((row) => {
-                const badge = getBadge(
-                  row.bestPaceSeconds,
-                  bestPaceByYear.get(row.year),
-                  bestPaceGlobal,
-                );
-                const dateLabel = formatDateFromFilename(
-                  row.bestPaceFilename,
-                  row.year,
-                  row.month,
-                );
-
-                return (
-                  <div
-                    key={`best-pace-${row.year}-${row.month}`}
-                    className="run-summary-list-row"
-                  >
-                    <span className="run-summary-list-date">{dateLabel}</span>
-                    <span className="run-summary-list-badge-cell">
-                      {badge ? (
-                        <span
-                          className={`run-summary-badge ${badge === "PB" ? "pb" : "sb"}`}
-                        >
-                          {badge}
-                        </span>
-                      ) : (
-                        "-"
-                      )}
-                    </span>
-                    <span className="run-summary-list-value run-summary-list-value-stack">
-                      <span>{formatPace(row.bestPaceSeconds)}</span>
-                      <span className="run-summary-list-subvalue">
-                        {formatMiles(row.bestPaceDistanceMiles)}
-                      </span>
-                    </span>
-                    <span className="run-summary-list-thumb-cell">
-                      {renderThumbnail(
-                        row.bestPaceFilename,
-                        `${row.year}-${String(row.month).padStart(2, "0")} best pace`,
-                      )}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="dashboard-section run-summary-panel-section">
-        <h2 className="accordion-heading">
-          <button
-            type="button"
-            className="accordion-toggle run-summary-list-toggle"
-            aria-expanded={openSummary === "list"}
-            aria-controls="summary-list-panel"
-            onClick={() =>
-              setOpenSummary((current) => (current === "list" ? null : "list"))
-            }
-          >
-            <span className="run-summary-list-toggle-title">
-              Runs ({listRowsCount})
-            </span>
-            <span className="run-summary-list-toggle-mix" aria-hidden="true">
-              <span className="run-summary-bar-wrapper">
-                {listBucketStats.map((bucket) => (
-                  <span
-                    key={`mix-toggle-${bucket.label}`}
-                    className="run-summary-bar-segment run-summary-mix-segment"
-                    style={{
-                      flex: Math.max(bucket.count, 0),
-                      background: bucket.color,
-                      minWidth: bucket.count > 0 ? "3px" : "0",
-                    }}
-                    data-tooltip={`${bucket.label} (${bucket.range}) - ${bucket.percent}%`}
+          {activeView === "gallery" && (
+            <div className="run-summary-gallery-view">
+              <div className="run-summary-gallery-controls">
+                <label className="inline-control">
+                  <input
+                    type="checkbox"
+                    checked={hideFilenames}
+                    onChange={(event) =>
+                      onToggleFilenames(event.target.checked)
+                    }
                   />
-                ))}
-              </span>
-            </span>
-            <span className="accordion-icon" aria-hidden="true">
-              {openSummary === "list" ? "-" : "+"}
-            </span>
-          </button>
-        </h2>
-        <div
-          id="summary-list-panel"
-          className={`accordion-panel ${openSummary === "list" ? "expanded" : "collapsed"}`}
-          aria-hidden={openSummary !== "list"}
-        >
-          <div className="accordion-panel-content run-summary-list-content">
-            <div className="run-summary-list-block">
-              <div className="run-summary-list-total">
-                Total Miles: <strong>{formatMiles(listTotalMiles)}</strong>
+                  Hide filenames
+                </label>
+
+                <label className="inline-control">
+                  <input
+                    type="checkbox"
+                    checked={showImageOverlay}
+                    onChange={(event) =>
+                      onToggleImageOverlay(event.target.checked)
+                    }
+                  />
+                  Show title overlay
+                </label>
+
+                <label className="inline-control" htmlFor="image-cols">
+                  Cols: <span>{imageColumns}</span>
+                  <input
+                    id="image-cols"
+                    type="range"
+                    min={3}
+                    max={24}
+                    step={1}
+                    value={imageColumns}
+                    onChange={(event) =>
+                      onImageColumnsChange(Number(event.target.value))
+                    }
+                  />
+                </label>
               </div>
 
-              {listRows.map((row) => (
-                <div
-                  key={`list-${row.filename}`}
-                  className="run-summary-list-row"
-                >
-                  <span className="run-summary-list-date">
-                    {formatCalendarDate(row.year, row.month, row.day)}
-                  </span>
-                  <span className="run-summary-list-value">
-                    {formatMiles(row.distanceMiles)}
-                  </span>
-                  <span className="run-summary-list-value-secondary">
-                    <span className="run-summary-list-pace">
-                      {formatPace(row.activityPaceSeconds)}
-                    </span>
-                    <span className="run-summary-list-meta">
-                      Act {formatSeconds(row.activitySeconds)} · Elap{" "}
-                      {formatSeconds(row.elapsedSeconds)} · {"♥"}{" "}
-                      {formatHeartRate(row.avgHeartRate, row.maxHeartRate)}
-                    </span>
-                  </span>
-                  <span className="run-summary-list-thumb-cell">
-                    {renderThumbnail(
-                      row.filename,
-                      `${row.filename} run summary`,
-                    )}
-                  </span>
-                  <div className="run-summary-best-effort-grid">
-                    {BEST_EFFORT_COLS.map((col, index) => (
-                      <span
-                        key={`h-${col.key}`}
-                        className={`run-summary-bef-cell run-summary-bef-header ${
-                          index % 2 === 0
-                            ? "run-summary-bef-col-a"
-                            : "run-summary-bef-col-b"
-                        }`}
-                      >
-                        {col.label}
-                      </span>
-                    ))}
-                    {BEST_EFFORT_COLS.map((col, index) =>
-                      (() => {
-                        const effortSeconds = row.bestEfforts[col.key];
-                        return (
+              <ImageGallery
+                images={images}
+                activeYear={activeYear}
+                activeMonth={activeMonth}
+                hideFilenames={hideFilenames}
+                showImageOverlay={showImageOverlay}
+                imageColumns={imageColumns}
+                isLoading={imagesLoading}
+                error={imageError}
+              />
+            </div>
+          )}
+
+          {activeView === "best" && (
+            <div className="run-summary-best-content">
+              <div className="run-summary-list-block">
+                <h3 className="run-summary-list-title">Best Distance</h3>
+                {monthlySummaries.map((row) => {
+                  const badge = getBadge(
+                    row.bestDistanceMiles,
+                    bestDistanceByYear.get(row.year),
+                    bestDistanceGlobal,
+                  );
+                  const dateLabel = formatDateFromFilename(
+                    row.bestDistanceFilename,
+                    row.year,
+                    row.month,
+                  );
+
+                  return (
+                    <div
+                      key={`best-distance-${row.year}-${row.month}`}
+                      className="run-summary-list-row"
+                    >
+                      <span className="run-summary-list-date">{dateLabel}</span>
+                      <span className="run-summary-list-badge-cell">
+                        {badge ? (
                           <span
-                            key={`v-${col.key}`}
-                            className={`run-summary-bef-cell run-summary-bef-value ${
+                            className={`run-summary-badge ${badge === "PB" ? "pb" : "sb"}`}
+                          >
+                            {badge}
+                          </span>
+                        ) : (
+                          "-"
+                        )}
+                      </span>
+                      <span className="run-summary-list-value run-summary-list-value-stack">
+                        <span>{formatMiles(row.bestDistanceMiles)}</span>
+                        <span className="run-summary-list-subvalue">
+                          {formatPace(row.bestDistancePaceSeconds)}
+                        </span>
+                      </span>
+                      <span className="run-summary-list-thumb-cell">
+                        {renderThumbnail(
+                          row.bestDistanceFilename,
+                          `${row.year}-${String(row.month).padStart(2, "0")} best distance`,
+                        )}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="run-summary-list-block">
+                <h3 className="run-summary-list-title">Best Pace</h3>
+                {monthlySummaries.map((row) => {
+                  const badge = getBadge(
+                    row.bestPaceSeconds,
+                    bestPaceByYear.get(row.year),
+                    bestPaceGlobal,
+                  );
+                  const dateLabel = formatDateFromFilename(
+                    row.bestPaceFilename,
+                    row.year,
+                    row.month,
+                  );
+
+                  return (
+                    <div
+                      key={`best-pace-${row.year}-${row.month}`}
+                      className="run-summary-list-row"
+                    >
+                      <span className="run-summary-list-date">{dateLabel}</span>
+                      <span className="run-summary-list-badge-cell">
+                        {badge ? (
+                          <span
+                            className={`run-summary-badge ${badge === "PB" ? "pb" : "sb"}`}
+                          >
+                            {badge}
+                          </span>
+                        ) : (
+                          "-"
+                        )}
+                      </span>
+                      <span className="run-summary-list-value run-summary-list-value-stack">
+                        <span>{formatPace(row.bestPaceSeconds)}</span>
+                        <span className="run-summary-list-subvalue">
+                          {formatMiles(row.bestPaceDistanceMiles)}
+                        </span>
+                      </span>
+                      <span className="run-summary-list-thumb-cell">
+                        {renderThumbnail(
+                          row.bestPaceFilename,
+                          `${row.year}-${String(row.month).padStart(2, "0")} best pace`,
+                        )}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {activeView === "runs" && (
+            <div className="run-summary-list-content">
+              <div className="run-summary-list-block">
+                <div className="run-summary-list-total">
+                  Total Miles: <strong>{formatMiles(listTotalMiles)}</strong>
+                  <span
+                    className="run-summary-list-toggle-mix"
+                    aria-hidden="true"
+                  >
+                    <span className="run-summary-bar-wrapper">
+                      {listBucketStats.map((bucket) => (
+                        <span
+                          key={`mix-${bucket.label}`}
+                          className="run-summary-bar-segment run-summary-mix-segment"
+                          style={{
+                            flex: Math.max(bucket.count, 0),
+                            background: bucket.color,
+                            minWidth: bucket.count > 0 ? "3px" : "0",
+                          }}
+                          data-tooltip={`${bucket.label} (${bucket.range}) - ${bucket.percent}%`}
+                        />
+                      ))}
+                    </span>
+                  </span>
+                </div>
+
+                {listRows.map((row) => (
+                  <div
+                    key={`list-${row.filename}`}
+                    className="run-summary-list-row"
+                  >
+                    <span className="run-summary-list-date">
+                      {formatOrdinalDay(row.day)}
+                    </span>
+                    <span className="run-summary-list-value">
+                      {formatMiles(row.distanceMiles)}
+                    </span>
+                    <span className="run-summary-list-value-secondary">
+                      <span className="run-summary-list-pace">
+                        {formatPace(row.activityPaceSeconds)}
+                      </span>
+                      <span className="run-summary-list-meta">
+                        Act {formatSeconds(row.activitySeconds)} · Elap{" "}
+                        {formatSeconds(row.elapsedSeconds)} · {"♥"}{" "}
+                        {formatHeartRate(row.avgHeartRate, row.maxHeartRate)}
+                      </span>
+                    </span>
+                    <span className="run-summary-list-thumb-cell">
+                      {renderThumbnail(
+                        row.filename,
+                        `${row.filename} run summary`,
+                      )}
+                    </span>
+                    <div className="run-summary-best-effort-wrapper">
+                      <div className="run-summary-best-effort-grid">
+                        {BEST_EFFORT_COLS.map((col, index) => (
+                          <span
+                            key={`h-${col.key}`}
+                            className={`run-summary-bef-cell run-summary-bef-header ${
                               index % 2 === 0
                                 ? "run-summary-bef-col-a"
                                 : "run-summary-bef-col-b"
-                            } ${
-                              bestEffortColumnWinners[col.key] === row.filename
-                                ? "highlight"
-                                : ""
                             }`}
                           >
-                            <span className="run-summary-bef-value-stack">
-                              <span className="run-summary-bef-pace">
-                                {formatPace(
-                                  effortSeconds != null
-                                    ? effortSeconds / col.miles
-                                    : null,
-                                )}
-                              </span>
-                              <span className="run-summary-bef-time">
-                                {formatSeconds(effortSeconds)}
-                              </span>
-                            </span>
+                            {col.label}
                           </span>
-                        );
-                      })(),
-                    )}
+                        ))}
+                        {BEST_EFFORT_COLS.map((col, index) =>
+                          (() => {
+                            const effortSeconds = row.bestEfforts[col.key];
+                            return (
+                              <span
+                                key={`v-${col.key}`}
+                                className={`run-summary-bef-cell run-summary-bef-value ${
+                                  index % 2 === 0
+                                    ? "run-summary-bef-col-a"
+                                    : "run-summary-bef-col-b"
+                                } ${
+                                  bestEffortColumnWinners[col.key] ===
+                                  row.filename
+                                    ? "highlight"
+                                    : ""
+                                }`}
+                              >
+                                <span className="run-summary-bef-value-stack">
+                                  <span className="run-summary-bef-pace">
+                                    {formatPace(
+                                      effortSeconds != null
+                                        ? effortSeconds / col.miles
+                                        : null,
+                                    )}
+                                  </span>
+                                  <span className="run-summary-bef-time">
+                                    {formatSeconds(effortSeconds)}
+                                  </span>
+                                </span>
+                              </span>
+                            );
+                          })(),
+                        )}
+                      </div>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
+          )}
         </div>
-      </section>
+      </div>
     </section>
   );
 }

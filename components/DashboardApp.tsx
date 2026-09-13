@@ -3,8 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import ControlBar from "@/components/ControlBar";
 import DropZone from "@/components/DropZone";
-import ImageGallery from "@/components/ImageGallery";
-import RunSummary from "@/components/RunSummary";
+import RunSummary, { type SummaryView } from "@/components/RunSummary";
 import StatusBanner from "@/components/StatusBanner";
 import StravaActivityList from "@/components/StravaActivityList";
 import {
@@ -26,7 +25,7 @@ type StatusState = {
   links?: Array<{ label: string; href: string }>;
 };
 
-type OpenSection = "images" | "activities" | null;
+type OpenSection = "activities" | null;
 type YearTab = "ALL" | number;
 type MonthTab = "ALL" | number;
 
@@ -95,7 +94,8 @@ export default function DashboardApp() {
   const [showImageOverlay, setShowImageOverlay] = useState(true);
   const [imageColumns, setImageColumns] = useState(10);
   const [showRunningOnly, setShowRunningOnly] = useState(false);
-  const [openSection, setOpenSection] = useState<OpenSection>("images");
+  const [openSection, setOpenSection] = useState<OpenSection>(null);
+  const [activeView, setActiveView] = useState<SummaryView>("calendar");
   const [activeYear, setActiveYear] = useState<YearTab>(() =>
     new Date().getFullYear(),
   );
@@ -115,7 +115,7 @@ export default function DashboardApp() {
   }, []);
 
   const refreshImages = useCallback(async () => {
-    setOpenSection("images");
+    setActiveView("gallery");
     setLoadingAction("refresh");
     setImageError(null);
     try {
@@ -288,9 +288,6 @@ export default function DashboardApp() {
     <main className="dashboard-wrap">
       <ControlBar
         healthStatus={healthStatus}
-        hideFilenames={hideFilenames}
-        showImageOverlay={showImageOverlay}
-        imageColumns={imageColumns}
         loadingAction={loadingAction}
         onRefresh={() => {
           void refreshImages();
@@ -310,9 +307,6 @@ export default function DashboardApp() {
         onLoadStrava={() => {
           void loadStravaActivities();
         }}
-        onToggleFilenames={setHideFilenames}
-        onToggleImageOverlay={setShowImageOverlay}
-        onImageColumnsChange={setImageColumns}
       />
 
       <DropZone
@@ -332,43 +326,6 @@ export default function DashboardApp() {
         />
       ) : null}
 
-      <section className="dashboard-section">
-        <h2 className="accordion-heading">
-          <button
-            type="button"
-            className="accordion-toggle"
-            aria-expanded={openSection === "images"}
-            aria-controls="images-panel"
-            onClick={() => toggleSection("images")}
-          >
-            <span>
-              Run Gallery {images.length > 0 ? ` (${images.length})` : ""}
-            </span>
-            <span className="accordion-icon" aria-hidden="true">
-              {openSection === "images" ? "-" : "+"}
-            </span>
-          </button>
-        </h2>
-        <div
-          id="images-panel"
-          className={`accordion-panel ${openSection === "images" ? "expanded" : "collapsed"}`}
-          aria-hidden={openSection !== "images"}
-        >
-          <div className="accordion-panel-content">
-            <ImageGallery
-              images={images}
-              activeYear={activeYear}
-              activeMonth={activeMonth}
-              hideFilenames={hideFilenames}
-              showImageOverlay={showImageOverlay}
-              imageColumns={imageColumns}
-              isLoading={imagesLoading}
-              error={imageError}
-            />
-          </div>
-        </div>
-      </section>
-
       <RunSummary
         images={images}
         activeYear={activeYear}
@@ -378,6 +335,16 @@ export default function DashboardApp() {
           setActiveMonth("ALL");
         }}
         onMonthChange={setActiveMonth}
+        activeView={activeView}
+        onViewChange={setActiveView}
+        hideFilenames={hideFilenames}
+        showImageOverlay={showImageOverlay}
+        imageColumns={imageColumns}
+        onToggleFilenames={setHideFilenames}
+        onToggleImageOverlay={setShowImageOverlay}
+        onImageColumnsChange={setImageColumns}
+        imagesLoading={imagesLoading}
+        imageError={imageError}
       />
 
       <section className="dashboard-section">

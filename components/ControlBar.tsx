@@ -1,8 +1,5 @@
 type ControlBarProps = {
   healthStatus: "checking" | "ok" | "error";
-  hideFilenames: boolean;
-  showImageOverlay: boolean;
-  imageColumns: number;
   loadingAction: string | null;
   onRefresh: () => void;
   onRefreshMetadata: () => void;
@@ -10,16 +7,10 @@ type ControlBarProps = {
   onGenerateFromStrava: () => void;
   onStitch: () => void;
   onLoadStrava: () => void;
-  onToggleFilenames: (checked: boolean) => void;
-  onToggleImageOverlay: (checked: boolean) => void;
-  onImageColumnsChange: (nextValue: number) => void;
 };
 
 export default function ControlBar({
   healthStatus,
-  hideFilenames,
-  showImageOverlay,
-  imageColumns,
   loadingAction,
   onRefresh,
   onRefreshMetadata,
@@ -27,9 +18,6 @@ export default function ControlBar({
   onGenerateFromStrava,
   onStitch,
   onLoadStrava,
-  onToggleFilenames,
-  onToggleImageOverlay,
-  onImageColumnsChange,
 }: ControlBarProps) {
   const healthText =
     healthStatus === "ok"
@@ -68,37 +56,6 @@ export default function ControlBar({
       <button type="button" onClick={onLoadStrava} disabled={busy}>
         {loadStravaLabel}
       </button>
-
-      <label className="inline-control">
-        <input
-          type="checkbox"
-          checked={hideFilenames}
-          onChange={(event) => onToggleFilenames(event.target.checked)}
-        />
-        Hide filenames
-      </label>
-
-      <label className="inline-control">
-        <input
-          type="checkbox"
-          checked={showImageOverlay}
-          onChange={(event) => onToggleImageOverlay(event.target.checked)}
-        />
-        Show title overlay
-      </label>
-
-      <label className="inline-control" htmlFor="image-cols">
-        Cols: <span>{imageColumns}</span>
-        <input
-          id="image-cols"
-          type="range"
-          min={3}
-          max={24}
-          step={1}
-          value={imageColumns}
-          onChange={(event) => onImageColumnsChange(Number(event.target.value))}
-        />
-      </label>
 
       <div className={`health-label health-${healthStatus} control-bar-health`}>
         {healthText}
