@@ -20,6 +20,16 @@ function sanitizeFilename(raw: string): string | null {
 
 // POST /api/images/upload-and-process
 export async function POST(request: Request) {
+  if (!config.features.enableWriteActions) {
+    return NextResponse.json(
+      {
+        error: "Disabled",
+        message: "Write actions are disabled in this deployment",
+      },
+      { status: 403 },
+    );
+  }
+
   try {
     let formData: FormData;
     try {

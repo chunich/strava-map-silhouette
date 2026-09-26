@@ -76,6 +76,16 @@ async function stitchSVGs(
 }
 
 export async function POST() {
+  if (!config.features.enableWriteActions) {
+    return NextResponse.json(
+      {
+        error: "Disabled",
+        message: "Write actions are disabled in this deployment",
+      },
+      { status: 403 },
+    );
+  }
+
   try {
     console.log("[POST /api/images/stitch] Starting stitch operation");
 

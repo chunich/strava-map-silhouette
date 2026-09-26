@@ -17,6 +17,16 @@ const client = new StravaClient({
 
 // POST /api/images/generate-from-strava
 export async function POST(request: Request) {
+  if (!config.features.enableWriteActions) {
+    return NextResponse.json(
+      {
+        error: "Disabled",
+        message: "Write actions are disabled in this deployment",
+      },
+      { status: 403 },
+    );
+  }
+
   try {
     console.log(
       "[POST /api/images/generate-from-strava] Starting generation from Strava API",

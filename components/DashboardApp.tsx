@@ -29,6 +29,11 @@ type OpenSection = "activities" | null;
 type YearTab = "ALL" | number;
 type MonthTab = "ALL" | number;
 
+// Read directly rather than importing config.js, which pulls in Node-only
+// deps (@tmcw/togeojson, dotenv) that shouldn't ship in the client bundle.
+const WRITE_ACTIONS_ENABLED =
+  process.env.NEXT_PUBLIC_ENABLE_WRITE_ACTIONS !== "false";
+
 function getDatePartsFromFilename(
   filename: string,
 ): { year: number; month: number } | null {
@@ -289,6 +294,7 @@ export default function DashboardApp() {
       <ControlBar
         healthStatus={healthStatus}
         loadingAction={loadingAction}
+        writeActionsEnabled={WRITE_ACTIONS_ENABLED}
         onRefresh={() => {
           void refreshImages();
         }}
@@ -309,13 +315,15 @@ export default function DashboardApp() {
         }}
       />
 
-      <DropZone
-        disabled={Boolean(loadingAction)}
-        onProcessed={(response) => {
-          void handleDropZoneProcessed(response);
-        }}
-        onError={handleDropZoneError}
-      />
+      {WRITE_ACTIONS_ENABLED && (
+        <DropZone
+          disabled={Boolean(loadingAction)}
+          onProcessed={(response) => {
+            void handleDropZoneProcessed(response);
+          }}
+          onError={handleDropZoneError}
+        />
+      )}
 
       {status ? (
         <StatusBanner

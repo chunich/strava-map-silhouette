@@ -6,6 +6,16 @@ import { processFileActivities } from "@/src/processFileActivities";
 
 // POST /api/images/generate
 export async function POST() {
+  if (!config.features.enableWriteActions) {
+    return NextResponse.json(
+      {
+        error: "Disabled",
+        message: "Write actions are disabled in this deployment",
+      },
+      { status: 403 },
+    );
+  }
+
   try {
     console.log(
       `[POST /api/images/generate] Starting generation from ${config.paths.sourceDir} with filter type "${config.filter.type}"`,

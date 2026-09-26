@@ -17,6 +17,16 @@ type ParsedActivity = {
 // SVG files are never touched. Use this after parser updates to pick up new
 // metric fields without re-rendering every silhouette.
 export async function POST() {
+  if (!config.features.enableWriteActions) {
+    return NextResponse.json(
+      {
+        error: "Disabled",
+        message: "Write actions are disabled in this deployment",
+      },
+      { status: 403 },
+    );
+  }
+
   try {
     // 1. Scan sourceDir for source files
     let sourceEntries: string[];

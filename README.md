@@ -36,6 +36,10 @@ Important fields:
 - `STRAVA_ACCESS_TOKEN`
 - `STRAVA_REFRESH_TOKEN`
 - `STRAVA_EXPIRES_AT`
+- `NEXT_PUBLIC_ENABLE_WRITE_ACTIONS` (optional, default `true`) - set to
+  `false` for read-only hosted deployments (e.g. Netlify, Vercel) where the
+  filesystem is ephemeral. Disables the upload/generate/stitch/refresh-stats
+  routes and hides their UI controls; browsing existing images still works.
 
 ## API Endpoints
 

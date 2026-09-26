@@ -115,6 +115,12 @@ a {
   margin-left: auto;
 }
 
+.control-bar-readonly-note {
+  color: #8fa0b8;
+  font-size: 0.78rem;
+  font-style: italic;
+}
+
 .status-banner {
   border-radius: 10px;
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);

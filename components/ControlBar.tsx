@@ -1,6 +1,7 @@
 type ControlBarProps = {
   healthStatus: "checking" | "ok" | "error";
   loadingAction: string | null;
+  writeActionsEnabled: boolean;
   onRefresh: () => void;
   onRefreshMetadata: () => void;
   onGenerateFromFiles: () => void;
@@ -12,6 +13,7 @@ type ControlBarProps = {
 export default function ControlBar({
   healthStatus,
   loadingAction,
+  writeActionsEnabled,
   onRefresh,
   onRefreshMetadata,
   onGenerateFromFiles,
@@ -41,21 +43,29 @@ export default function ControlBar({
       <button type="button" onClick={onRefresh} disabled={busy}>
         {refreshLabel}
       </button>
-      <button type="button" onClick={onRefreshMetadata} disabled={busy}>
-        {refreshStatsLabel}
-      </button>
-      <button type="button" onClick={onGenerateFromFiles} disabled={busy}>
-        {gpxLabel}
-      </button>
-      <button type="button" onClick={onGenerateFromStrava} disabled={busy}>
-        {stravaLabel}
-      </button>
-      <button type="button" onClick={onStitch} disabled={busy}>
-        {stitchLabel}
-      </button>
+      {writeActionsEnabled && (
+        <>
+          <button type="button" onClick={onRefreshMetadata} disabled={busy}>
+            {refreshStatsLabel}
+          </button>
+          <button type="button" onClick={onGenerateFromFiles} disabled={busy}>
+            {gpxLabel}
+          </button>
+          <button type="button" onClick={onGenerateFromStrava} disabled={busy}>
+            {stravaLabel}
+          </button>
+          <button type="button" onClick={onStitch} disabled={busy}>
+            {stitchLabel}
+          </button>
+        </>
+      )}
       <button type="button" onClick={onLoadStrava} disabled={busy}>
         {loadStravaLabel}
       </button>
+
+      {!writeActionsEnabled && (
+        <span className="control-bar-readonly-note">Read-only mode</span>
+      )}
 
       <div className={`health-label health-${healthStatus} control-bar-health`}>
         {healthText}
