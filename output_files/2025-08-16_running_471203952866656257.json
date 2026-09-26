@@ -1,0 +1,24 @@
+{
+  "titleLabel": "3.40",
+  "metrics": {
+    "activityTime": 2457.29,
+    "elapsedTime": 2464.3,
+    "totalTime": 2464.3,
+    "avgHeartRate": 113,
+    "maxHeartRate": 139,
+    "totalAscent": 14,
+    "totalDescent": 19,
+    "bestMileSeconds": 667.7360000610352,
+    "best1MileSeconds": 667.7360000610352,
+    "best5KSeconds": 2276.3976290225983,
+    "best10KSeconds": null,
+    "best10MileSeconds": null,
+    "best20KSeconds": null,
+    "bestHalfSeconds": null,
+    "best25KSeconds": null,
+    "best30KSeconds": null,
+    "best35KSeconds": null,
+    "best40KSeconds": null,
+    "bestMarathonSeconds": null
+  }
+}

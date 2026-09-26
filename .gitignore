@@ -40,9 +40,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# output directory
-/output_files
-
 # source directory (if you want to ignore it)
 /source_files
 /test_files

@@ -99,7 +99,19 @@ export async function GET() {
     try {
       await access(config.paths.outputDir);
     } catch {
-      await mkdir(config.paths.outputDir, { recursive: true });
+      try {
+        await mkdir(config.paths.outputDir, { recursive: true });
+      } catch (mkdirError) {
+        // Read-only/ephemeral filesystem (e.g. serverless hosting like
+        // Vercel/Netlify) where the output directory isn't part of the
+        // deployed bundle. Treat this as "no images yet" instead of failing.
+        console.warn(
+          "[GET /api/images] Unable to create output directory, returning empty list:",
+          mkdirError,
+        );
+
+        return NextResponse.json({ images: [] });
+      }
     }
 
     const files = await readdir(config.paths.outputDir);
