@@ -58,6 +58,16 @@ const config = {
       ? 30
       : activityLookupDays,
   },
+
+  // Feature flags
+  features: {
+    // Disable filesystem-write routes/UI (upload, generate, stitch,
+    // refresh-metadata) for read-only hosted deployments (e.g. Netlify,
+    // Vercel) where the filesystem is ephemeral. Defaults to enabled so
+    // local dev keeps working without any env changes.
+    enableWriteActions:
+      process.env.NEXT_PUBLIC_ENABLE_WRITE_ACTIONS !== "false",
+  },
 };
 
 module.exports = config;

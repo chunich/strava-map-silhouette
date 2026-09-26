@@ -12,18 +12,18 @@ This application uses a `.env` file for configuration. All settings can be custo
 
 2. Edit `.env` with your preferred settings
 
-3. Start the server:
+3. Start the app:
    ```bash
-   npm run server
+   npm run dev
    ```
 
 ## Configuration Options
 
-### Server Configuration
+### App Configuration
 
 **PORT** (default: `3000`)
 
-- The port number where the server will run
+- The port number where the app will run
 - Example: `PORT=8080`
 
 ### Directory Paths
@@ -50,7 +50,7 @@ This application uses a `.env` file for configuration. All settings can be custo
 
 **ACTIVITY_LOOKUP_DAYS** (default: `30`)
 
-- Number of days of recent activity to fetch for `GET /strava/activities`
+- Number of days of recent activity to fetch for `GET /api/strava/activities`
 - Example: `ACTIVITY_LOOKUP_DAYS=14`
 
 ### Draw Options - Image Dimensions
@@ -117,5 +117,5 @@ OUTPUT_DIR=/Users/username/Documents/strava-images
 
 - The `.env` file is ignored by git (see `.gitignore`)
 - Never commit sensitive information in `.env.example`
-- Restart the server after changing `.env` values
+- Restart the app after changing `.env` values
 - Invalid values will fall back to defaults

@@ -4,9 +4,8 @@ Option 1 migration baseline: monolithic Next.js app (frontend + backend in one c
 
 ## Current Status
 
-- Next.js App Router scaffold added under `app/`
-- API route placeholders added under `app/api/`
-- Existing Express implementation is kept for incremental migration
+- Next.js App Router is the active runtime under `app/`
+- API endpoints are implemented under `app/api/`
 - Existing processing modules under `src/` are retained
 
 ## Tech Stack
@@ -15,7 +14,7 @@ Option 1 migration baseline: monolithic Next.js app (frontend + backend in one c
 - React 18
 - TypeScript
 - Tailwind CSS
-- Existing Node modules for parsing, Strava, and image generation (`sharp`, TCX/GPX tooling)
+- Existing Node modules for parsing, Strava, and image generation (`sharp`, GPX/TCX/FIT tooling)
 
 ## Scripts
 
@@ -24,7 +23,6 @@ Option 1 migration baseline: monolithic Next.js app (frontend + backend in one c
 - `npm run start` - Start production Next.js app
 - `npm run lint` - Run Next.js lint
 - `npm run legacy:cli` - Run old CLI flow (`index.js`)
-- `npm run server` - Run legacy Express server with nodemon
 
 ## Environment Variables
 
@@ -38,10 +36,14 @@ Important fields:
 - `STRAVA_ACCESS_TOKEN`
 - `STRAVA_REFRESH_TOKEN`
 - `STRAVA_EXPIRES_AT`
+- `NEXT_PUBLIC_ENABLE_WRITE_ACTIONS` (optional, default `true`) - set to
+  `false` for read-only hosted deployments (e.g. Netlify, Vercel) where the
+  filesystem is ephemeral. Disables the upload/generate/stitch/refresh-stats
+  routes and hides their UI controls; browsing existing images still works.
 
-## API Migration Plan
+## API Endpoints
 
-These Next.js route handlers are scaffolded and return `501 Not implemented` unless noted:
+Implemented Next.js route handlers:
 
 - `GET /api/images`
 - `GET /api/images/[filename]`
@@ -49,17 +51,7 @@ These Next.js route handlers are scaffolded and return `501 Not implemented` unl
 - `POST /api/images/generate-from-strava`
 - `POST /api/images/stitch`
 - `GET /api/strava/activities`
-- `GET /api/health` (implemented baseline)
-
-Suggested migration order:
-
-1. `GET /api/health`
-2. `GET /api/images`
-3. `GET /api/images/[filename]`
-4. `GET /api/strava/activities`
-5. `POST /api/images/generate-from-strava`
-6. `POST /api/images/generate`
-7. `POST /api/images/stitch`
+- `GET /api/health`
 
 ## Run
 
@@ -70,12 +62,7 @@ npm run dev
 
 Open `http://localhost:3000`.
 
-Legacy bridge:
-
-- Open `http://localhost:3000/legacy-demo` to run the existing `demo.html` through Next.js during migration.
-- Set `NEXT_PUBLIC_LEGACY_API_BASE_URL` if the legacy Express server is running on a different port than Next.js.
-
 ## Notes
 
-- During migration, you can still run the legacy Express API with `npm run server`.
-- Keep legacy files until each endpoint is ported and validated.
+- The legacy Express `server.js` runtime has been retired.
+- FIT parsing uses `fit-file-parser` and requires Node.js 20+.

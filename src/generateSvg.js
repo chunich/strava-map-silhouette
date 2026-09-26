@@ -53,10 +53,15 @@ function generateSvg({
       ...(options.colors || {}),
       track: trackColor,
     },
-    title: titleLabel,
+    title: "",
   });
 
-  return { svgContent };
+  return {
+    svgContent,
+    titleLabel,
+    distanceMiles,
+    dateFormatted: formattedDate,
+  };
 }
 
-module.exports = { generateSvg };
+module.exports = { generateSvg, getTitleLabel, formatDateLabel };

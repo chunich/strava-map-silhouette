@@ -45,7 +45,7 @@
 
 ### 3. Files Modified
 
-- **`server.js`** - Now loads configuration from `config.js` instead of inline
+- **`config.js`** - Centralized loading and parsing of environment variables
 - **`src/tracksDrawer.js`** - Exports `DEFAULT_DRAW_OPTIONS` for reuse
 - **`src/processFileActivities.js`** - Accepts custom draw options
 - **`.gitignore`** - Added `.env` files to prevent committing secrets
@@ -64,9 +64,9 @@
 
 2. **Edit `.env` with your settings** (optional - defaults work fine)
 
-3. **Start the server:**
+3. **Start the app:**
    ```bash
-   npm run server
+   npm run dev
    ```
 
 ## Example: Change Track Color
@@ -77,7 +77,7 @@ Edit `.env`:
 TRACK_COLOR=#2ab6e8
 ```
 
-Restart the server and regenerate images to see the new color.
+Restart the app and regenerate images to see the new color.
 
 ## Example: High Resolution Output
 
@@ -103,7 +103,7 @@ STROKE_WIDTH=8
 1. `dotenv` loads `.env` file
 2. `config.js` reads environment variables
 3. Falls back to defaults if not specified
-4. `server.js` uses the config object
+4. App and API handlers use the config object
 
 ## Accessing Configuration in Code
 

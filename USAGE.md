@@ -8,7 +8,7 @@ Before running these examples, make sure you have:
 
 1. Installed dependencies: `npm install`
 
-## Example 1: Process a Single GPX File
+## Example 1: Process a Single GPX or FIT File
 
 Process the included example run activity:
 
@@ -66,16 +66,16 @@ You can also use the npm start script:
 npm start examples/run_example.gpx
 ```
 
-## Example 4: Process Your Own GPX Files
+## Example 4: Process Your Own Activity Files
 
-To process your own GPX files:
+To process your own GPX/TCX/FIT files:
 
-1. Export your activities from Garmin/COROS/Strava as GPX files
+1. Export your activities from Garmin/COROS/Strava as GPX/TCX/FIT files
 2. Place them in a directory (e.g., `my-activities/`)
 3. Run the processor:
 
 ```bash
-node index.js my-activities/*.gpx
+node index.js my-activities/*.{gpx,tcx,fit}
 ```
 
 ## Understanding the Output
@@ -121,9 +121,9 @@ To modify the route color or width, edit the `tracksToSVG` options in `index.js`
 
 ## Troubleshooting
 
-### Issue: "No track data found in GPX"
+### Issue: "No track data found in GPX/TCX/FIT"
 
-**Solution**: Ensure your GPX file contains `<trk>` and `<trkpt>` elements with latitude and longitude data.
+**Solution**: Ensure your source activity file includes route coordinate records. For GPX this means `<trk>` and `<trkpt>` elements with latitude and longitude data.
 
 ### Issue: Output directory permission denied
 

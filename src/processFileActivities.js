@@ -2,6 +2,7 @@ const fs = require("fs").promises;
 const path = require("path");
 const { parseGPX } = require("./gpxParser");
 const { parseTCX } = require("./tcxParser");
+const { parseFIT } = require("./fitParser");
 const { activityToGeoJSON } = require("./geoJsonConverter");
 const {
   DistanceCategory,
@@ -14,8 +15,8 @@ function getActivityType(activity) {
 }
 
 /**
- * Process activity files (GPX/TCX) and generate silhouette images
- * @param {Array<string>} gpxPaths - Array of GPX/TCX file paths
+ * Process activity files (GPX/TCX/FIT) and generate silhouette images
+ * @param {Array<string>} gpxPaths - Array of GPX/TCX/FIT file paths
  * @param {string} outputDir - Output directory for silhouette images
  * @param {Object} options - Processing options
  */
@@ -24,6 +25,7 @@ async function processFileActivities(gpxPaths, outputDir, options = {}) {
     filterType = "Running",
     minimumDistance = 1,
     verbose = false,
+    force = false,
   } = options;
 
   await fs.mkdir(outputDir, { recursive: true });
@@ -31,6 +33,7 @@ async function processFileActivities(gpxPaths, outputDir, options = {}) {
   const results = [];
 
   for (const gpxPath of gpxPaths) {
+    let activity;
     try {
       const logLine = `Processing [${gpxPaths.indexOf(gpxPath) + 1} of ${gpxPaths.length}]`;
       if (verbose) {
@@ -40,12 +43,22 @@ async function processFileActivities(gpxPaths, outputDir, options = {}) {
       }
 
       // Read file and detect format
-      const fileContent = await fs.readFile(gpxPath, "utf-8");
       const fileExt = path.extname(gpxPath).toLowerCase();
+      const isFitFile = fileExt === ".fit";
+      const fileContent = isFitFile
+        ? await fs.readFile(gpxPath)
+        : await fs.readFile(gpxPath, "utf-8");
 
       // Parse based on file extension
-      const activity =
-        fileExt === ".tcx" ? parseTCX(fileContent) : parseGPX(fileContent);
+      if (fileExt === ".tcx") {
+        activity = parseTCX(fileContent);
+      } else if (fileExt === ".gpx") {
+        activity = parseGPX(fileContent);
+      } else if (fileExt === ".fit") {
+        activity = await parseFIT(fileContent);
+      } else {
+        throw new Error(`Unsupported file extension: ${fileExt}`);
+      }
       const activityType = getActivityType(activity);
 
       // Filter by activity type (case insensitive)
@@ -85,6 +98,33 @@ async function processFileActivities(gpxPaths, outputDir, options = {}) {
         continue;
       }
 
+      const baseName = path.basename(gpxPath, path.extname(gpxPath));
+      const dateStr = activity.time
+        ? new Date(activity.time).toISOString().slice(0, 10)
+        : "unknown_date";
+      const activityName = (activity.name || "Unknown").replace(/\s+/g, "_");
+      const filename = `${dateStr}_${activityName}_${baseName}.svg`;
+      const outputPath = path.join(outputDir, filename);
+
+      // Skip generation if the output image already exists (unless force is set)
+      if (!force) {
+        try {
+          await fs.access(outputPath);
+          console.log(`  Skipping: Output already exists (${filename})`);
+          results.push({
+            activity: activity.name,
+            type: activityType,
+            status: "skipped",
+            outputImage: outputPath,
+            gpxFile: gpxPath,
+            reason: "already-exists",
+          });
+          continue;
+        } catch {
+          // File does not exist yet, proceed with generation.
+        }
+      }
+
       // Log VERBOSE activity info
       if (verbose) {
         console.log(`  ✓ Parsed file: ${gpxPath}`);
@@ -97,8 +137,8 @@ async function processFileActivities(gpxPaths, outputDir, options = {}) {
       // Convert to polyline format
       let polyline = [];
 
-      if (fileExt === ".tcx") {
-        // TCX already has coordinates in the right format
+      if (fileExt === ".tcx" || fileExt === ".fit") {
+        // TCX/FIT already provide coordinates in [lng, lat].
         polyline = activity.coordinates.map(([lng, lat]) => ({ lng, lat }));
       } else {
         // GPX needs GeoJSON conversion
@@ -134,14 +174,7 @@ async function processFileActivities(gpxPaths, outputDir, options = {}) {
       ];
 
       // Save image
-      const baseName = path.basename(gpxPath, path.extname(gpxPath));
-      const dateStr = activity.time
-        ? new Date(activity.time).toISOString().slice(0, 10)
-        : "unknown_date";
-      const activityName = activity.name.replace(/\s+/g, "_");
-      const filename = `${dateStr}_${activityName}_${baseName}.svg`;
-      const outputPath = path.join(outputDir, filename);
-      const { svgContent } = generateSvg({
+      const { svgContent, titleLabel } = generateSvg({
         tracks,
         distanceMiles: activity.distance,
         dateSource: activity.time,
@@ -149,6 +182,16 @@ async function processFileActivities(gpxPaths, outputDir, options = {}) {
         titleLabelOption: 3,
       });
       await fs.writeFile(outputPath, svgContent, "utf-8");
+      const metadataPath = outputPath.replace(".svg", ".json");
+      const metadata = {
+        titleLabel,
+        ...(activity.metrics ? { metrics: activity.metrics } : {}),
+      };
+      await fs.writeFile(
+        metadataPath,
+        JSON.stringify(metadata, null, 2),
+        "utf-8",
+      );
       console.log(`  ✓ Saved to: ${outputPath}`);
 
       // Record success
