@@ -95,9 +95,9 @@ export default function DashboardApp() {
   const [status, setStatus] = useState<StatusState | null>(null);
   const [imageError, setImageError] = useState<string | null>(null);
   const [activitiesError, setActivitiesError] = useState<string | null>(null);
-  const [hideFilenames, setHideFilenames] = useState(false);
+  const [hideFilenames, setHideFilenames] = useState(true);
   const [showImageOverlay, setShowImageOverlay] = useState(true);
-  const [imageColumns, setImageColumns] = useState(10);
+  const [imageColumns, setImageColumns] = useState(3);
   const [showRunningOnly, setShowRunningOnly] = useState(false);
   const [openSection, setOpenSection] = useState<OpenSection>(null);
   const [activeView, setActiveView] = useState<SummaryView>("calendar");
@@ -355,7 +355,7 @@ export default function DashboardApp() {
         imageError={imageError}
       />
 
-      <section className="dashboard-section">
+      <section className="dashboard-section" style={{ display: "none" }}>
         <h2 className="accordion-heading">
           <button
             type="button"

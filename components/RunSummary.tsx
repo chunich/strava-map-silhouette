@@ -900,7 +900,7 @@ export default function RunSummary({
                   <input
                     id="image-cols"
                     type="range"
-                    min={3}
+                    min={1}
                     max={24}
                     step={1}
                     value={imageColumns}

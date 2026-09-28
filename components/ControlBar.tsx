@@ -59,9 +59,9 @@ export default function ControlBar({
           </button>
         </>
       )}
-      <button type="button" onClick={onLoadStrava} disabled={busy}>
+      {/* <button type="button" onClick={onLoadStrava} disabled={busy}>
         {loadStravaLabel}
-      </button>
+      </button> */}
 
       {!writeActionsEnabled && (
         <span className="control-bar-readonly-note">Read-only mode</span>

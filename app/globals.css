@@ -406,7 +406,7 @@ a {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 0.35rem;
 }
 
@@ -435,7 +435,7 @@ a {
   flex-wrap: wrap;
   justify-content: center;
   gap: 0.3rem 0.6rem;
-  font-size: 0.72rem;
+  font-size: clamp(0.55rem, calc(2.4rem / var(--cols, 5)), 0.72rem);
   color: #b8cfe8;
   line-height: 1.3;
   text-shadow: 0 1px 1px rgba(0, 0, 0, 0.8);
@@ -501,26 +501,6 @@ a {
 .activity-title span {
   font-size: 0.9rem;
   opacity: 0.85;
-}
-
-@media (max-width: 768px) {
-  .dashboard-wrap {
-    padding: 1rem;
-  }
-
-  .inline-control input[type="range"] {
-    width: 120px;
-  }
-
-  .run-summary-filter-chips {
-    flex-direction: column;
-  }
-
-  .run-summary-year-chips,
-  .run-summary-month-chips {
-    width: 100%;
-    flex: 1 1 auto;
-  }
 }
 
 /* Run Summary */
@@ -1260,6 +1240,40 @@ a {
   color: #b8c6d8;
   font-weight: 500;
   margin-left: 0.2rem;
+}
+
+@media (max-width: 768px) {
+  .dashboard-wrap {
+    padding: 1rem;
+  }
+
+  .inline-control input[type="range"] {
+    width: 120px;
+  }
+
+  .run-summary-filter-chips {
+    flex-direction: column;
+  }
+
+  .run-summary-year-chips,
+  .run-summary-month-chips {
+    width: 100%;
+    flex: 0 0 auto;
+    flex-direction: row;
+    overflow-x: auto;
+    padding-bottom: 0.25rem;
+  }
+
+  .run-summary-year-chips .run-summary-chip,
+  .run-summary-month-chips .run-summary-chip {
+    flex-shrink: 0;
+    white-space: nowrap;
+    width: auto;
+  }
+
+  .overlay-label {
+    font-size: clamp(0.9rem, calc(6rem / var(--cols, 5)), 3rem);
+  }
 }
 
 @media (max-width: 900px) {
