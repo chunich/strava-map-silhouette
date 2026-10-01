@@ -119,33 +119,38 @@ export default function DashboardApp() {
     setOpenSection((current) => (current === section ? null : section));
   }, []);
 
-  const refreshImages = useCallback(async () => {
-    setActiveView("gallery");
-    setLoadingAction("refresh");
-    setImageError(null);
-    try {
-      const nextImages = await reloadImages();
-      if (!didInitDateScope.current) {
-        const defaultScope = getDefaultScopeFromImages(nextImages);
-        if (defaultScope) {
-          setActiveYear(defaultScope.year);
-          setActiveMonth(defaultScope.month);
-        }
-        didInitDateScope.current = true;
+  const refreshImages = useCallback(
+    async (options?: { switchView?: boolean }) => {
+      if (options?.switchView !== false) {
+        setActiveView("gallery");
       }
-      setStatus({
-        tone: "info",
-        message: `Loaded ${nextImages.length} image(s).`,
-      });
-    } catch (error) {
-      const msg =
-        error instanceof Error ? error.message : "Failed to load images";
-      setImageError(msg);
-      setStatus({ tone: "error", message: msg });
-    } finally {
-      setLoadingAction(null);
-    }
-  }, [reloadImages]);
+      setLoadingAction("refresh");
+      setImageError(null);
+      try {
+        const nextImages = await reloadImages();
+        if (!didInitDateScope.current) {
+          const defaultScope = getDefaultScopeFromImages(nextImages);
+          if (defaultScope) {
+            setActiveYear(defaultScope.year);
+            setActiveMonth(defaultScope.month);
+          }
+          didInitDateScope.current = true;
+        }
+        setStatus({
+          tone: "info",
+          message: `Loaded ${nextImages.length} image(s).`,
+        });
+      } catch (error) {
+        const msg =
+          error instanceof Error ? error.message : "Failed to load images";
+        setImageError(msg);
+        setStatus({ tone: "error", message: msg });
+      } finally {
+        setLoadingAction(null);
+      }
+    },
+    [reloadImages],
+  );
 
   const handleDropZoneProcessed = useCallback(
     async (response: Awaited<ReturnType<typeof uploadAndProcessFiles>>) => {
@@ -283,7 +288,7 @@ export default function DashboardApp() {
   useEffect(() => {
     async function bootstrap() {
       await refreshHealth();
-      await refreshImages();
+      await refreshImages({ switchView: false });
     }
 
     void bootstrap();

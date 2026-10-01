@@ -167,12 +167,8 @@ export default function ImageGallery({
               updateCardStyles();
             }}
           >
-            <a
+            <div
               className="image-thumb"
-              href={`/api/images/${encodeURIComponent(filename)}`}
-              target="_blank"
-              rel="noreferrer"
-              aria-label={`Open ${filename}`}
               onFocus={() => {
                 hoveredCategoryRef.current = category;
                 updateCardStyles();
@@ -234,7 +230,7 @@ export default function ImageGallery({
                     })()}
                 </div>
               )}
-            </a>
+            </div>
             {!hideFilenames ? (
               <div className="filename" title={filename}>
                 {filename}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import Image from "next/image";
 import type { ImageListItem } from "@/lib/api-types";
 import ImageGallery from "@/components/ImageGallery";
@@ -303,6 +303,15 @@ export default function RunSummary({
   imagesLoading,
   imageError,
 }: RunSummaryProps) {
+  const activeMonthChipRef = useRef<HTMLButtonElement | null>(null);
+
+  useEffect(() => {
+    activeMonthChipRef.current?.scrollIntoView({
+      inline: "center",
+      block: "nearest",
+    });
+  }, [activeYear, activeMonth]);
+
   const yearTabs = useMemo(() => {
     const years = new Set<number>();
     for (const image of images) {
@@ -831,6 +840,7 @@ export default function RunSummary({
               return (
                 <button
                   key={`${activeYear}-${monthName}`}
+                  ref={isMonthSelected ? activeMonthChipRef : undefined}
                   type="button"
                   disabled={isMonthDisabled}
                   className={`run-summary-chip month-chip ${isMonthSelected ? "active" : ""} ${isMonthDisabled ? "disabled" : ""}`}

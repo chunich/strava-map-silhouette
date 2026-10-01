@@ -601,7 +601,7 @@ a {
 
 .run-summary-filter-chips {
   display: flex;
-  gap: 1rem;
+  gap: 0.5rem;
   align-items: flex-start;
   margin-bottom: 0.75rem;
 }
