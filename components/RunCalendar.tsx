@@ -112,7 +112,7 @@ export default function RunCalendar({
                 `${activeYear}-${activeMonth}-${day} runs`,
               )}
               <span className="run-calendar-day-miles">
-                {info.totalMiles.toFixed(1)} mi
+                {info.totalMiles.toFixed(1)}
               </span>
               {info.runCount > 1 && (
                 <span className="run-calendar-day-badge">{info.runCount}</span>

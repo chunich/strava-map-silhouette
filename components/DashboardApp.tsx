@@ -97,7 +97,7 @@ export default function DashboardApp() {
   const [activitiesError, setActivitiesError] = useState<string | null>(null);
   const [hideFilenames, setHideFilenames] = useState(true);
   const [showImageOverlay, setShowImageOverlay] = useState(true);
-  const [imageColumns, setImageColumns] = useState(3);
+  const [imageColumns, setImageColumns] = useState(2);
   const [showRunningOnly, setShowRunningOnly] = useState(false);
   const [openSection, setOpenSection] = useState<OpenSection>(null);
   const [activeView, setActiveView] = useState<SummaryView>("calendar");

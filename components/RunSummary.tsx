@@ -106,20 +106,19 @@ function formatCalendarDate(
   return `${label} ${day}, ${year}`;
 }
 
-function formatOrdinalDay(day: number | null): string {
-  if (day == null || !Number.isInteger(day) || day < 1) return "-";
-
-  const remainderTen = day % 10;
-  const remainderHundred = day % 100;
-
-  let suffix = "th";
-  if (remainderHundred < 11 || remainderHundred > 13) {
-    if (remainderTen === 1) suffix = "st";
-    else if (remainderTen === 2) suffix = "nd";
-    else if (remainderTen === 3) suffix = "rd";
+function formatMonthDotDay(month: number | null, day: number | null): string {
+  if (
+    month == null ||
+    day == null ||
+    !Number.isInteger(month) ||
+    !Number.isInteger(day) ||
+    month < 1 ||
+    day < 1
+  ) {
+    return "-";
   }
 
-  return `${day}${suffix}`;
+  return `${month}/${day}`;
 }
 
 function parseMiles(image: ImageListItem): number | null {
@@ -782,7 +781,7 @@ export default function RunSummary({
             { view: "calendar", label: "Calendar" },
             { view: "gallery", label: "Gallery" },
             { view: "best", label: "Best" },
-            { view: "runs", label: `Runs (${listRowsCount})` },
+            { view: "runs", label: `Runs` },
           ] as { view: SummaryView; label: string }[]
         ).map(({ view, label }) => (
           <button
@@ -874,24 +873,30 @@ export default function RunSummary({
             <div className="run-summary-gallery-view">
               <div className="run-summary-gallery-controls">
                 <label className="inline-control">
-                  <input
-                    type="checkbox"
-                    checked={hideFilenames}
-                    onChange={(event) =>
-                      onToggleFilenames(event.target.checked)
-                    }
-                  />
+                  <span className="toggle-switch">
+                    <input
+                      type="checkbox"
+                      checked={hideFilenames}
+                      onChange={(event) =>
+                        onToggleFilenames(event.target.checked)
+                      }
+                    />
+                    <span className="toggle-switch-track" aria-hidden="true" />
+                  </span>
                   Hide filenames
                 </label>
 
                 <label className="inline-control">
-                  <input
-                    type="checkbox"
-                    checked={showImageOverlay}
-                    onChange={(event) =>
-                      onToggleImageOverlay(event.target.checked)
-                    }
-                  />
+                  <span className="toggle-switch">
+                    <input
+                      type="checkbox"
+                      checked={showImageOverlay}
+                      onChange={(event) =>
+                        onToggleImageOverlay(event.target.checked)
+                      }
+                    />
+                    <span className="toggle-switch-track" aria-hidden="true" />
+                  </span>
                   Show title overlay
                 </label>
 
@@ -901,7 +906,7 @@ export default function RunSummary({
                     id="image-cols"
                     type="range"
                     min={1}
-                    max={24}
+                    max={8}
                     step={1}
                     value={imageColumns}
                     onChange={(event) =>
@@ -1028,7 +1033,7 @@ export default function RunSummary({
             <div className="run-summary-list-content">
               <div className="run-summary-list-block">
                 <div className="run-summary-list-total">
-                  Total Miles: <strong>{formatMiles(listTotalMiles)}</strong>
+                  <strong>{formatMiles(listTotalMiles)}</strong>
                   <span
                     className="run-summary-list-toggle-mix"
                     aria-hidden="true"
@@ -1055,11 +1060,13 @@ export default function RunSummary({
                     key={`list-${row.filename}`}
                     className="run-summary-list-row"
                   >
-                    <span className="run-summary-list-date">
-                      {formatOrdinalDay(row.day)}
-                    </span>
-                    <span className="run-summary-list-value">
-                      {formatMiles(row.distanceMiles)}
+                    <span className="run-summary-list-date-value">
+                      <span className="run-summary-list-value">
+                        {formatMiles(row.distanceMiles)}
+                      </span>
+                      <span className="run-summary-list-date">
+                        {formatMonthDotDay(row.month, row.day)}
+                      </span>
                     </span>
                     <span className="run-summary-list-value-secondary">
                       <span className="run-summary-list-pace">
