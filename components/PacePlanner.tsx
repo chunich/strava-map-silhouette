@@ -7,12 +7,12 @@ import { formatFinishTime, secondsToPaceLabel } from "@/lib/pace";
 
 const PACE_MIN = 480;
 const PACE_MAX = 720;
-const PACE_STEP = 5;
+const PACE_STEP = 1;
 const DEFAULT_PACE = 540;
 
 const GROUP_A_MILES = 10;
 const GROUP_B_MILES = 10;
-const GROUP_C_MILES = 6.2;
+const GROUP_C_MILES = 6.218;
 
 export default function PacePlanner() {
   const [paceA, setPaceA] = useState(DEFAULT_PACE);
@@ -34,7 +34,7 @@ export default function PacePlanner() {
 
       <div className="pace-planner-group">
         <label htmlFor="pace-group-a">
-          Miles 0–{GROUP_A_MILES}{" "}
+          Miles 0 – {GROUP_A_MILES}{" "}
           <span className="pace-planner-value">
             {secondsToPaceLabel(paceA)}
           </span>
@@ -52,7 +52,7 @@ export default function PacePlanner() {
 
       <div className="pace-planner-group">
         <label htmlFor="pace-group-b">
-          Miles {GROUP_A_MILES}–{GROUP_A_MILES + GROUP_B_MILES}{" "}
+          Miles {GROUP_A_MILES} – {GROUP_A_MILES + GROUP_B_MILES}{" "}
           <span className="pace-planner-value">
             {secondsToPaceLabel(paceB)}
           </span>
@@ -70,7 +70,7 @@ export default function PacePlanner() {
 
       <div className="pace-planner-group">
         <label htmlFor="pace-group-c">
-          Miles {GROUP_A_MILES + GROUP_B_MILES}–26.2{" "}
+          Miles {GROUP_A_MILES + GROUP_B_MILES} – 26.218{" "}
           <span className="pace-planner-value">
             {secondsToPaceLabel(paceC)}
           </span>
