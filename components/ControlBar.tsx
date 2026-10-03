@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 type ControlBarProps = {
   healthStatus: "checking" | "ok" | "error";
   loadingAction: string | null;
@@ -66,6 +68,10 @@ export default function ControlBar({
       {!writeActionsEnabled && (
         <span className="control-bar-readonly-note">Read-only mode</span>
       )}
+
+      <Link href="/pace-planner" className="control-bar-nav-link">
+        Pace Planner
+      </Link>
 
       <div className={`health-label health-${healthStatus} control-bar-health`}>
         {healthText}
