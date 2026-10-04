@@ -97,7 +97,7 @@ export default function DashboardApp() {
   const [activitiesError, setActivitiesError] = useState<string | null>(null);
   const [hideFilenames, setHideFilenames] = useState(true);
   const [showImageOverlay, setShowImageOverlay] = useState(true);
-  const [imageColumns, setImageColumns] = useState(2);
+  const [imageColumns, setImageColumns] = useState(3);
   const [gallerySortDirection, setGallerySortDirection] = useState<
     "asc" | "desc"
   >("desc");

@@ -316,11 +316,15 @@ export default function RunSummary({
   const activeMonthChipRef = useRef<HTMLButtonElement | null>(null);
 
   useEffect(() => {
-    activeMonthChipRef.current?.scrollIntoView({
-      inline: "center",
-      block: "nearest",
+    const frame = requestAnimationFrame(() => {
+      activeMonthChipRef.current?.scrollIntoView({
+        inline: "center",
+        block: "nearest",
+      });
     });
-  }, [activeYear, activeMonth]);
+
+    return () => cancelAnimationFrame(frame);
+  }, [activeYear, activeMonth, imagesLoading]);
 
   const yearTabs = useMemo(() => {
     const years = new Set<number>();
@@ -824,6 +828,7 @@ export default function RunSummary({
                 aria-label={`Sort by date, currently ${gallerySortDirection === "asc" ? "ascending" : "descending"}`}
                 onClick={(event) => {
                   event.stopPropagation();
+                  onViewChange(view);
                   onGallerySortDirectionChange(
                     gallerySortDirection === "asc" ? "desc" : "asc",
                   );
@@ -832,6 +837,7 @@ export default function RunSummary({
                   if (event.key !== "Enter" && event.key !== " ") return;
                   event.preventDefault();
                   event.stopPropagation();
+                  onViewChange(view);
                   onGallerySortDirectionChange(
                     gallerySortDirection === "asc" ? "desc" : "asc",
                   );
@@ -848,6 +854,7 @@ export default function RunSummary({
                 aria-label={`Sort by date, currently ${runsSortDirection === "asc" ? "ascending" : "descending"}`}
                 onClick={(event) => {
                   event.stopPropagation();
+                  onViewChange(view);
                   onRunsSortDirectionChange(
                     runsSortDirection === "asc" ? "desc" : "asc",
                   );
@@ -856,6 +863,7 @@ export default function RunSummary({
                   if (event.key !== "Enter" && event.key !== " ") return;
                   event.preventDefault();
                   event.stopPropagation();
+                  onViewChange(view);
                   onRunsSortDirectionChange(
                     runsSortDirection === "asc" ? "desc" : "asc",
                   );
