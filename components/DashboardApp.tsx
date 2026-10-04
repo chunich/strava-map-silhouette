@@ -98,6 +98,12 @@ export default function DashboardApp() {
   const [hideFilenames, setHideFilenames] = useState(true);
   const [showImageOverlay, setShowImageOverlay] = useState(true);
   const [imageColumns, setImageColumns] = useState(2);
+  const [gallerySortDirection, setGallerySortDirection] = useState<
+    "asc" | "desc"
+  >("desc");
+  const [runsSortDirection, setRunsSortDirection] = useState<"asc" | "desc">(
+    "desc",
+  );
   const [showRunningOnly, setShowRunningOnly] = useState(false);
   const [openSection, setOpenSection] = useState<OpenSection>(null);
   const [activeView, setActiveView] = useState<SummaryView>("calendar");
@@ -356,6 +362,10 @@ export default function DashboardApp() {
         onToggleFilenames={setHideFilenames}
         onToggleImageOverlay={setShowImageOverlay}
         onImageColumnsChange={setImageColumns}
+        gallerySortDirection={gallerySortDirection}
+        onGallerySortDirectionChange={setGallerySortDirection}
+        runsSortDirection={runsSortDirection}
+        onRunsSortDirectionChange={setRunsSortDirection}
         imagesLoading={imagesLoading}
         imageError={imageError}
       />

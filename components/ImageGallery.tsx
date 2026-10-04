@@ -10,6 +10,7 @@ type ImageGalleryProps = {
   hideFilenames: boolean;
   showImageOverlay: boolean;
   imageColumns: number;
+  sortDirection?: "asc" | "desc";
   isLoading?: boolean;
   error?: string | null;
 };
@@ -56,6 +57,7 @@ export default function ImageGallery({
   hideFilenames,
   showImageOverlay,
   imageColumns,
+  sortDirection = "asc",
   isLoading = false,
   error = null,
 }: ImageGalleryProps) {
@@ -64,7 +66,7 @@ export default function ImageGallery({
   const hoveredCategoryRef = useRef<number | null>(null);
   const gridRef = useRef<HTMLDivElement>(null);
 
-  // Filter images based on selected year/month, then sort oldest first.
+  // Filter images based on selected year/month, then sort by date.
   const filteredImages = useMemo(() => {
     const scopedImages = images.filter((image) => {
       if (activeYear === "ALL") return true;
@@ -80,9 +82,11 @@ export default function ImageGallery({
     });
 
     return [...scopedImages].sort((a, b) =>
-      a.filename.localeCompare(b.filename),
+      sortDirection === "asc"
+        ? a.filename.localeCompare(b.filename)
+        : b.filename.localeCompare(a.filename),
     );
-  }, [images, activeYear, activeMonth]);
+  }, [images, activeYear, activeMonth, sortDirection]);
 
   useLayoutEffect(() => {
     const nextRects = new Map<string, DOMRect>();

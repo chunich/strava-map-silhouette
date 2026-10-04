@@ -696,7 +696,7 @@ a {
   flex: 1 1 0;
   font-size: 0.8rem;
   font-weight: 700;
-  padding: 0.35rem 0.9rem;
+  padding: 0.35rem 0.5rem;
   text-align: center;
   transition: all 0.15s ease;
 }
@@ -710,6 +710,18 @@ a {
   background: #32435c;
   border-color: #86a6ce;
   color: #f3f7fd;
+}
+
+.run-summary-view-sort-toggle {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  display: inline-block;
+  margin-left: 0.4rem;
+  padding: 0 0.3rem;
+}
+
+.run-summary-view-sort-toggle:hover {
+  background: rgba(255, 255, 255, 0.18);
 }
 
 .run-summary-filter-chips {

@@ -150,9 +150,15 @@ type RunSummaryProps = {
   onToggleFilenames: (checked: boolean) => void;
   onToggleImageOverlay: (checked: boolean) => void;
   onImageColumnsChange: (nextValue: number) => void;
+  gallerySortDirection: SortDirection;
+  onGallerySortDirectionChange: (direction: SortDirection) => void;
+  runsSortDirection: SortDirection;
+  onRunsSortDirectionChange: (direction: SortDirection) => void;
   imagesLoading?: boolean;
   imageError?: string | null;
 };
+
+export type SortDirection = "asc" | "desc";
 
 const MONTHS = [
   "Jan",
@@ -300,6 +306,10 @@ export default function RunSummary({
   onToggleFilenames,
   onToggleImageOverlay,
   onImageColumnsChange,
+  gallerySortDirection,
+  onGallerySortDirectionChange,
+  runsSortDirection,
+  onRunsSortDirectionChange,
   imagesLoading,
   imageError,
 }: RunSummaryProps) {
@@ -579,8 +589,12 @@ export default function RunSummary({
       };
     });
 
-    return rows.sort((a, b) => b.filename.localeCompare(a.filename));
-  }, [filteredImages]);
+    return rows.sort((a, b) =>
+      runsSortDirection === "asc"
+        ? a.filename.localeCompare(b.filename)
+        : b.filename.localeCompare(a.filename),
+    );
+  }, [filteredImages, runsSortDirection]);
 
   const calendarDayMap = useMemo(() => {
     const map = new Map<number, CalendarDayInfo>();
@@ -802,6 +816,54 @@ export default function RunSummary({
             onClick={() => onViewChange(view)}
           >
             {label}
+            {view === "gallery" && (
+              <span
+                role="button"
+                tabIndex={0}
+                className="run-summary-view-sort-toggle"
+                aria-label={`Sort by date, currently ${gallerySortDirection === "asc" ? "ascending" : "descending"}`}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onGallerySortDirectionChange(
+                    gallerySortDirection === "asc" ? "desc" : "asc",
+                  );
+                }}
+                onKeyDown={(event) => {
+                  if (event.key !== "Enter" && event.key !== " ") return;
+                  event.preventDefault();
+                  event.stopPropagation();
+                  onGallerySortDirectionChange(
+                    gallerySortDirection === "asc" ? "desc" : "asc",
+                  );
+                }}
+              >
+                {gallerySortDirection === "asc" ? "\u2191" : "\u2193"}
+              </span>
+            )}
+            {view === "runs" && (
+              <span
+                role="button"
+                tabIndex={0}
+                className="run-summary-view-sort-toggle"
+                aria-label={`Sort by date, currently ${runsSortDirection === "asc" ? "ascending" : "descending"}`}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onRunsSortDirectionChange(
+                    runsSortDirection === "asc" ? "desc" : "asc",
+                  );
+                }}
+                onKeyDown={(event) => {
+                  if (event.key !== "Enter" && event.key !== " ") return;
+                  event.preventDefault();
+                  event.stopPropagation();
+                  onRunsSortDirectionChange(
+                    runsSortDirection === "asc" ? "desc" : "asc",
+                  );
+                }}
+              >
+                {runsSortDirection === "asc" ? "\u2191" : "\u2193"}
+              </span>
+            )}
           </button>
         ))}
       </div>
@@ -933,6 +995,7 @@ export default function RunSummary({
                 hideFilenames={hideFilenames}
                 showImageOverlay={showImageOverlay}
                 imageColumns={imageColumns}
+                sortDirection={gallerySortDirection}
                 isLoading={imagesLoading}
                 error={imageError}
               />
