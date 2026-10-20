@@ -1,4 +1,8 @@
 const FitParser = require("fit-file-parser").default;
+const {
+  BEST_EFFORT_DISTANCES,
+  computeBestEffortSeconds,
+} = require("./bestEffort");
 
 function haversineDistance([lon1, lat1], [lon2, lat2]) {
   const toRad = (deg) => (deg * Math.PI) / 180;
@@ -19,76 +23,6 @@ function getValue(object, keys) {
     }
   }
   return null;
-}
-
-const BEST_EFFORT_DISTANCES = [
-  { key: "best1MileSeconds", miles: 1.0 },
-  { key: "best5KSeconds", miles: 3.10686 },
-  { key: "best10KSeconds", miles: 6.21371 },
-  { key: "best10MileSeconds", miles: 10.0 },
-  { key: "best20KSeconds", miles: 12.4274 },
-  { key: "bestHalfSeconds", miles: 13.1094 },
-  { key: "best25KSeconds", miles: 15.534 },
-  { key: "best30KSeconds", miles: 18.6411 },
-  { key: "best35KSeconds", miles: 21.748 },
-  { key: "best40KSeconds", miles: 24.8548 },
-  { key: "bestMarathonSeconds", miles: 26.2188 },
-];
-
-function computeBestEffortSeconds(samples, targetDistanceMiles) {
-  if (!Array.isArray(samples) || samples.length < 2) {
-    return null;
-  }
-
-  let best = Infinity;
-  let start = 0;
-
-  for (let end = 1; end < samples.length; end++) {
-    const targetDistance = samples[end].distanceMiles - targetDistanceMiles;
-
-    while (
-      start + 1 < end &&
-      samples[start + 1].distanceMiles <= targetDistance
-    ) {
-      start++;
-    }
-
-    const atStart = samples[start];
-    if (atStart.distanceMiles > targetDistance) {
-      continue;
-    }
-
-    let mileStartTime = null;
-    if (Math.abs(atStart.distanceMiles - targetDistance) < 1e-9) {
-      mileStartTime = atStart.timeSeconds;
-    } else if (start + 1 <= end) {
-      const afterStart = samples[start + 1];
-      const distanceDelta = afterStart.distanceMiles - atStart.distanceMiles;
-      if (distanceDelta <= 0) {
-        continue;
-      }
-
-      const ratio = (targetDistance - atStart.distanceMiles) / distanceDelta;
-      if (ratio < 0 || ratio > 1) {
-        continue;
-      }
-
-      mileStartTime =
-        atStart.timeSeconds +
-        ratio * (afterStart.timeSeconds - atStart.timeSeconds);
-    }
-
-    if (!Number.isFinite(mileStartTime)) {
-      continue;
-    }
-
-    const duration = samples[end].timeSeconds - mileStartTime;
-    if (duration > 0 && duration < best) {
-      best = duration;
-    }
-  }
-
-  return Number.isFinite(best) ? best : null;
 }
 
 /**
@@ -237,6 +171,7 @@ function parseFIT(fitBuffer) {
         coordinates,
         distance, // in miles
         pace, // seconds per mile
+        distanceTimeSamples,
         metrics: {
           activityTime: movingTime,
           elapsedTime,

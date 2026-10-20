@@ -72,16 +72,47 @@ function parseGPX(gpxContent) {
   // Calculate total time in seconds (if possible)
   let totalTime = null;
   let pace = null;
-  // Try to extract time from trkpt
+  // Try to extract time from trkpt, and build cumulative distance/time
+  // samples (used for pace-chart/best-effort window lookups).
   let times = [];
+  const distanceTimeSamples = [];
+  let cumulativeDistanceMiles = 0;
+  let previousCoordinate = null;
   for (const segment of segments) {
     if (!segment.trkpt) continue;
     const points = Array.isArray(segment.trkpt)
       ? segment.trkpt
       : [segment.trkpt];
     for (const point of points) {
+      let coordinate = null;
+      if (point["@_lat"] && point["@_lon"]) {
+        coordinate = [parseFloat(point["@_lon"]), parseFloat(point["@_lat"])];
+      }
+
+      let timeSeconds = null;
       if (point.time) {
-        times.push(new Date(point.time).getTime());
+        const epoch = new Date(point.time).getTime();
+        if (!isNaN(epoch)) {
+          times.push(epoch);
+          timeSeconds = epoch / 1000;
+        }
+      }
+
+      if (coordinate && previousCoordinate) {
+        cumulativeDistanceMiles += haversineDistance(
+          previousCoordinate,
+          coordinate,
+        );
+      }
+      if (coordinate) {
+        previousCoordinate = coordinate;
+      }
+
+      if (timeSeconds != null) {
+        distanceTimeSamples.push({
+          distanceMiles: cumulativeDistanceMiles,
+          timeSeconds,
+        });
       }
     }
   }
@@ -99,6 +130,7 @@ function parseGPX(gpxContent) {
     coordinates,
     distance, // in miles
     pace, // in seconds per mile, or null if not available
+    distanceTimeSamples,
   };
 }
 

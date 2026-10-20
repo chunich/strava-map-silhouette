@@ -32,6 +32,9 @@ function parseTCX(tcxContent) {
   // Extract coordinates from all trackpoints
   const coordinates = [];
   const times = [];
+  const distanceTimeSamples = [];
+  let cumulativeDistanceMiles = 0;
+  let previousCoordinate = null;
 
   for (const lap of laps) {
     if (!lap.Track) continue;
@@ -45,15 +48,40 @@ function parseTCX(tcxContent) {
         : [track.Trackpoint];
 
       for (const point of points) {
+        let coordinate = null;
         if (point.Position) {
           const lat = parseFloat(point.Position.LatitudeDegrees);
           const lon = parseFloat(point.Position.LongitudeDegrees);
           if (!isNaN(lat) && !isNaN(lon)) {
-            coordinates.push([lon, lat]);
+            coordinate = [lon, lat];
+            coordinates.push(coordinate);
           }
         }
+
+        let timeSeconds = null;
         if (point.Time) {
-          times.push(new Date(point.Time).getTime());
+          const epoch = new Date(point.Time).getTime();
+          if (!isNaN(epoch)) {
+            times.push(epoch);
+            timeSeconds = epoch / 1000;
+          }
+        }
+
+        if (coordinate && previousCoordinate) {
+          cumulativeDistanceMiles += haversineDistance(
+            previousCoordinate,
+            coordinate,
+          );
+        }
+        if (coordinate) {
+          previousCoordinate = coordinate;
+        }
+
+        if (timeSeconds != null) {
+          distanceTimeSamples.push({
+            distanceMiles: cumulativeDistanceMiles,
+            timeSeconds,
+          });
         }
       }
     }
@@ -99,6 +127,7 @@ function parseTCX(tcxContent) {
     coordinates,
     distance, // in miles
     pace, // in seconds per mile, or null if not available
+    distanceTimeSamples,
   };
 }
 
