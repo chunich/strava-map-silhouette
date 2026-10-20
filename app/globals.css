@@ -1043,6 +1043,48 @@ a {
   text-transform: uppercase;
 }
 
+.run-summary-list-title-row {
+  align-items: center;
+  background: #1c2533;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: space-between;
+  padding-right: 0.7rem;
+}
+
+.run-summary-list-title-row .run-summary-list-title {
+  flex: 1 1 auto;
+}
+
+.run-summary-best-pace-filter {
+  display: flex;
+  gap: 0.3rem;
+}
+
+.run-summary-best-pace-filter-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border: solid 1px #324257;
+  border-radius: 999px;
+  color: #b9c8dc;
+  cursor: pointer;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.2rem 0.6rem;
+  text-transform: none;
+}
+
+.run-summary-best-pace-filter-btn:hover {
+  border-color: #4a6283;
+  color: #dce8f8;
+}
+
+.run-summary-best-pace-filter-btn.active {
+  background: #3b82f6;
+  border-color: #3b82f6;
+  color: #ffffff;
+}
+
 .run-summary-list-total {
   align-items: center;
   background: #1a2432;

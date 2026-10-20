@@ -106,13 +106,40 @@ type RunPoint = {
   distanceMiles: number | null;
   activitySeconds: number | null;
   paceSeconds: number | null;
+  bestEfforts: BestEffortSeconds;
 };
 
 type BadgeRunPoint = {
   year: number | null;
   distanceMiles: number | null;
   paceSeconds: number | null;
+  bestEfforts: BestEffortSeconds;
 };
+
+const BEST_PACE_DISTANCE_FILTERS: {
+  key: keyof BestEffortSeconds;
+  label: string;
+}[] = [
+  { key: "best1MileSeconds", label: "1mi" },
+  { key: "best5KSeconds", label: "5K" },
+  { key: "best10KSeconds", label: "10K" },
+  { key: "bestHalfSeconds", label: "Half" },
+];
+
+const BEST_EFFORT_MILES_BY_KEY: Record<keyof BestEffortSeconds, number> =
+  Object.fromEntries(
+    BEST_EFFORT_COLS.map((col) => [col.key, col.miles]),
+  ) as Record<keyof BestEffortSeconds, number>;
+
+function toBestEffortPaceSeconds(
+  rawSeconds: number | null,
+  metricKey: keyof BestEffortSeconds,
+): number | null {
+  if (rawSeconds == null) return null;
+  const miles = BEST_EFFORT_MILES_BY_KEY[metricKey];
+  if (!miles) return null;
+  return rawSeconds / miles;
+}
 
 type RunListRow = {
   filename: string;
@@ -182,6 +209,8 @@ export default function RunSummary({
     year: number;
     month: number;
   } | null>(null);
+  const [bestPaceMetricKey, setBestPaceMetricKey] =
+    useState<keyof BestEffortSeconds>("best1MileSeconds");
 
   useEffect(() => {
     const frame = requestAnimationFrame(() => {
@@ -290,6 +319,10 @@ export default function RunSummary({
       const paceSeconds = bestMileSeconds ?? derivedPaceSeconds;
       const key = `${parts.year}-${String(parts.month).padStart(2, "0")}`;
 
+      const m = image.metadata?.metrics;
+      const n = (v: number | null | undefined) =>
+        Number.isFinite(v) ? Number(v) : null;
+
       const monthRuns = grouped.get(key) ?? {
         year: parts.year,
         month: parts.month,
@@ -301,6 +334,19 @@ export default function RunSummary({
         distanceMiles,
         activitySeconds,
         paceSeconds,
+        bestEfforts: {
+          best1MileSeconds: n(m?.best1MileSeconds),
+          best5KSeconds: n(m?.best5KSeconds),
+          best10KSeconds: n(m?.best10KSeconds),
+          best10MileSeconds: n(m?.best10MileSeconds),
+          best20KSeconds: n(m?.best20KSeconds),
+          bestHalfSeconds: n(m?.bestHalfSeconds),
+          best25KSeconds: n(m?.best25KSeconds),
+          best30KSeconds: n(m?.best30KSeconds),
+          best35KSeconds: n(m?.best35KSeconds),
+          best40KSeconds: n(m?.best40KSeconds),
+          bestMarathonSeconds: n(m?.bestMarathonSeconds),
+        },
       });
 
       grouped.set(key, monthRuns);
@@ -343,9 +389,13 @@ export default function RunSummary({
           totalPaceSeconds += run.activitySeconds;
         }
 
-        if (run.paceSeconds != null && run.paceSeconds > 0) {
-          if (bestPaceSeconds == null || run.paceSeconds < bestPaceSeconds) {
-            bestPaceSeconds = run.paceSeconds;
+        const metricPaceSeconds = toBestEffortPaceSeconds(
+          run.bestEfforts[bestPaceMetricKey],
+          bestPaceMetricKey,
+        );
+        if (metricPaceSeconds != null && metricPaceSeconds > 0) {
+          if (bestPaceSeconds == null || metricPaceSeconds < bestPaceSeconds) {
+            bestPaceSeconds = metricPaceSeconds;
             bestPaceFilename = run.filename;
             bestPaceDistanceMiles = run.distanceMiles;
           }
@@ -376,7 +426,7 @@ export default function RunSummary({
       if (a.year !== b.year) return b.year - a.year;
       return b.month - a.month;
     });
-  }, [bestScopeImages]);
+  }, [bestScopeImages, bestPaceMetricKey]);
 
   const allBadgeRuns = useMemo(() => {
     // Badge scope is intentionally independent of UI filters:
@@ -399,10 +449,27 @@ export default function RunSummary({
         ? Number(image.metadata?.metrics?.bestMileSeconds)
         : null;
 
+      const m = image.metadata?.metrics;
+      const n = (v: number | null | undefined) =>
+        Number.isFinite(v) ? Number(v) : null;
+
       return {
         year: parts?.year ?? null,
         distanceMiles,
         paceSeconds: bestMileSeconds ?? derivedPaceSeconds,
+        bestEfforts: {
+          best1MileSeconds: n(m?.best1MileSeconds),
+          best5KSeconds: n(m?.best5KSeconds),
+          best10KSeconds: n(m?.best10KSeconds),
+          best10MileSeconds: n(m?.best10MileSeconds),
+          best20KSeconds: n(m?.best20KSeconds),
+          bestHalfSeconds: n(m?.bestHalfSeconds),
+          best25KSeconds: n(m?.best25KSeconds),
+          best30KSeconds: n(m?.best30KSeconds),
+          best35KSeconds: n(m?.best35KSeconds),
+          best40KSeconds: n(m?.best40KSeconds),
+          bestMarathonSeconds: n(m?.bestMarathonSeconds),
+        },
       };
     });
 
@@ -596,13 +663,17 @@ export default function RunSummary({
   const bestPaceGlobal = useMemo(() => {
     let value: number | null = null;
     for (const run of allBadgeRuns) {
-      if (run.paceSeconds == null) continue;
-      if (value == null || run.paceSeconds < value) {
-        value = run.paceSeconds;
+      const metricPaceSeconds = toBestEffortPaceSeconds(
+        run.bestEfforts[bestPaceMetricKey],
+        bestPaceMetricKey,
+      );
+      if (metricPaceSeconds == null) continue;
+      if (value == null || metricPaceSeconds < value) {
+        value = metricPaceSeconds;
       }
     }
     return value;
-  }, [allBadgeRuns]);
+  }, [allBadgeRuns, bestPaceMetricKey]);
 
   const bestDistanceByYear = useMemo(() => {
     const byYear = new Map<number, number>();
@@ -620,15 +691,19 @@ export default function RunSummary({
   const bestPaceByYear = useMemo(() => {
     const byYear = new Map<number, number>();
     for (const run of allBadgeRuns) {
-      if (run.year == null || run.paceSeconds == null) continue;
+      const metricPaceSeconds = toBestEffortPaceSeconds(
+        run.bestEfforts[bestPaceMetricKey],
+        bestPaceMetricKey,
+      );
+      if (run.year == null || metricPaceSeconds == null) continue;
 
       const existing = byYear.get(run.year);
-      if (existing == null || run.paceSeconds < existing) {
-        byYear.set(run.year, run.paceSeconds);
+      if (existing == null || metricPaceSeconds < existing) {
+        byYear.set(run.year, metricPaceSeconds);
       }
     }
     return byYear;
-  }, [allBadgeRuns]);
+  }, [allBadgeRuns, bestPaceMetricKey]);
 
   if (images.length === 0) return null;
 
@@ -938,7 +1013,29 @@ export default function RunSummary({
                 </div>
 
                 <div className="run-summary-list-block">
-                  <h3 className="run-summary-list-title">Best Pace</h3>
+                  <div className="run-summary-list-title-row">
+                    <h3 className="run-summary-list-title">Best Pace</h3>
+                    <div
+                      className="run-summary-best-pace-filter"
+                      role="tablist"
+                      aria-label="Filter best pace by distance"
+                    >
+                      {BEST_PACE_DISTANCE_FILTERS.map((option) => (
+                        <button
+                          key={option.key}
+                          type="button"
+                          role="tab"
+                          aria-selected={bestPaceMetricKey === option.key}
+                          className={`run-summary-best-pace-filter-btn ${
+                            bestPaceMetricKey === option.key ? "active" : ""
+                          }`}
+                          onClick={() => setBestPaceMetricKey(option.key)}
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                   {monthlySummaries.map((row) => {
                     const badge = getBadge(
                       row.bestPaceSeconds,
