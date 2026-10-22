@@ -9,6 +9,7 @@ import RunCalendar, {
   type CalendarYearOverviewMonth,
 } from "@/components/RunCalendar";
 import RunDetailModal from "@/components/RunDetailModal";
+import TrendsBarChart from "@/components/TrendsBarChart";
 import {
   BEST_EFFORT_COLS,
   type BestEffortSeconds,
@@ -57,7 +58,51 @@ function isSameValue(a: number | null, b: number | null): boolean {
   return Math.abs(a - b) < 1e-9;
 }
 
-export type SummaryView = "calendar" | "gallery" | "best" | "runs";
+type TrendsGranularity = "week" | "month" | "16week" | "year";
+type TrendsMetric = "distance" | "time";
+
+const TRENDS_GRANULARITY_OPTIONS: { key: TrendsGranularity; label: string }[] =
+  [
+    { key: "week", label: "Week" },
+    { key: "month", label: "Month" },
+    { key: "16week", label: "16-Week" },
+    { key: "year", label: "Year" },
+  ];
+
+const TRENDS_METRIC_OPTIONS: { key: TrendsMetric; label: string }[] = [
+  { key: "distance", label: "Distance" },
+  { key: "time", label: "Time" },
+];
+
+function getWeekStart(date: Date): Date {
+  const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const day = d.getDay();
+  const diffToMonday = day === 0 ? -6 : 1 - day;
+  d.setDate(d.getDate() + diffToMonday);
+  return d;
+}
+
+function weekKey(weekStart: Date): string {
+  const year = weekStart.getFullYear();
+  const month = String(weekStart.getMonth() + 1).padStart(2, "0");
+  const day = String(weekStart.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function formatWeekLabel(weekStart: Date): string {
+  const weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekEnd.getDate() + 6);
+  const startLabel = `${MONTHS[weekStart.getMonth()]} ${weekStart.getDate()}`;
+  const endLabel = `${MONTHS[weekEnd.getMonth()]} ${weekEnd.getDate()}`;
+  return `${startLabel} - ${endLabel}, ${weekEnd.getFullYear()}`;
+}
+
+function formatWeekAxisLabel(weekStart: Date): string {
+  const year = String(weekStart.getFullYear()).slice(2);
+  return `${MONTHS[weekStart.getMonth()]} ${weekStart.getDate()} '${year}`;
+}
+
+export type SummaryView = "calendar" | "gallery" | "best" | "trends" | "runs";
 
 type RunSummaryProps = {
   images: ImageListItem[];
@@ -211,6 +256,9 @@ export default function RunSummary({
   } | null>(null);
   const [bestPaceMetricKey, setBestPaceMetricKey] =
     useState<keyof BestEffortSeconds>("best1MileSeconds");
+  const [trendsGranularity, setTrendsGranularity] =
+    useState<TrendsGranularity>("week");
+  const [trendsMetric, setTrendsMetric] = useState<TrendsMetric>("distance");
 
   useEffect(() => {
     const frame = requestAnimationFrame(() => {
@@ -705,6 +753,128 @@ export default function RunSummary({
     return byYear;
   }, [allBadgeRuns, bestPaceMetricKey]);
 
+  const trendsBuckets = useMemo(() => {
+    type TrendsBucket = {
+      key: string;
+      label: string;
+      axisLabel: string;
+      sortKey: number;
+      totalMiles: number;
+      totalSeconds: number;
+      runCount: number;
+    };
+
+    const map = new Map<string, TrendsBucket>();
+
+    for (const image of images) {
+      const parts = getDatePartsFromFilename(image.filename);
+      if (!parts) continue;
+
+      const distanceMiles = parseMiles(image);
+      const activitySeconds = Number.isFinite(
+        image.metadata?.metrics?.activityTime,
+      )
+        ? Number(image.metadata?.metrics?.activityTime)
+        : null;
+      const runDate = new Date(parts.year, parts.month - 1, parts.day);
+
+      let key: string;
+      let label: string;
+      let axisLabel: string;
+      let sortKey: number;
+
+      if (trendsGranularity === "month") {
+        key = `${parts.year}-${String(parts.month).padStart(2, "0")}`;
+        label = `${MONTHS[parts.month - 1]} '${String(parts.year).slice(2)}`;
+        axisLabel = label;
+        sortKey = parts.year * 100 + parts.month;
+      } else if (trendsGranularity === "year") {
+        key = String(parts.year);
+        label = key;
+        axisLabel = label;
+        sortKey = parts.year;
+      } else {
+        const weekStart = getWeekStart(runDate);
+        key = weekKey(weekStart);
+        label = formatWeekLabel(weekStart);
+        axisLabel = formatWeekAxisLabel(weekStart);
+        sortKey = weekStart.getTime();
+      }
+
+      const existing = map.get(key) ?? {
+        key,
+        label,
+        axisLabel,
+        sortKey,
+        totalMiles: 0,
+        totalSeconds: 0,
+        runCount: 0,
+      };
+
+      if (distanceMiles != null) existing.totalMiles += distanceMiles;
+      if (activitySeconds != null) existing.totalSeconds += activitySeconds;
+      existing.runCount += 1;
+
+      map.set(key, existing);
+    }
+
+    let bucketsArray = Array.from(map.values()).sort(
+      (a, b) => a.sortKey - b.sortKey,
+    );
+
+    if (trendsGranularity === "16week") {
+      const currentWeekStart = getWeekStart(new Date());
+      const weeks: TrendsBucket[] = [];
+      for (let i = 15; i >= 0; i--) {
+        const weekStart = new Date(currentWeekStart);
+        weekStart.setDate(weekStart.getDate() - i * 7);
+        const key = weekKey(weekStart);
+        const existing = map.get(key);
+        weeks.push(
+          existing ?? {
+            key,
+            label: formatWeekLabel(weekStart),
+            axisLabel: formatWeekAxisLabel(weekStart),
+            sortKey: weekStart.getTime(),
+            totalMiles: 0,
+            totalSeconds: 0,
+            runCount: 0,
+          },
+        );
+      }
+      bucketsArray = weeks;
+    }
+
+    return bucketsArray;
+  }, [images, trendsGranularity]);
+
+  const trendsChartBuckets = useMemo(
+    () =>
+      trendsBuckets.map((bucket) => ({
+        key: bucket.key,
+        label: bucket.label,
+        axisLabel: bucket.axisLabel,
+        value:
+          trendsMetric === "distance" ? bucket.totalMiles : bucket.totalSeconds,
+      })),
+    [trendsBuckets, trendsMetric],
+  );
+
+  const trendsSummary = useMemo(() => {
+    let total = 0;
+    for (const bucket of trendsBuckets) {
+      total +=
+        trendsMetric === "distance" ? bucket.totalMiles : bucket.totalSeconds;
+    }
+    const average = trendsBuckets.length > 0 ? total / trendsBuckets.length : 0;
+    return { total, average };
+  }, [trendsBuckets, trendsMetric]);
+
+  function formatTrendsValue(value: number): string {
+    if (trendsMetric === "distance") return `${value.toFixed(1)} mi`;
+    return formatSeconds(value);
+  }
+
   if (images.length === 0) return null;
 
   const listRowsCount = listRows.length;
@@ -752,6 +922,7 @@ export default function RunSummary({
               { view: "calendar", label: "Calendar" },
               { view: "gallery", label: "Gallery" },
               { view: "best", label: "Best" },
+              { view: "trends", label: "Trends" },
               { view: "runs", label: `Runs` },
             ] as { view: SummaryView; label: string }[]
           ).map(({ view, label }) => (
@@ -821,51 +992,56 @@ export default function RunSummary({
         </div>
 
         <div className="run-summary-filter-chips">
-          <div className="run-summary-year-chips">
-            {yearTabs.map((yearTab) => {
-              const isSelected = yearTab === activeYear;
-              const yearKey = String(yearTab);
-              const count = yearCounts[yearKey] || 0;
-
-              return (
-                <button
-                  key={yearKey}
-                  type="button"
-                  className={`run-summary-chip ${isSelected ? "active" : ""}`}
-                  onClick={() => onYearChange(yearTab)}
-                >
-                  {yearTab} <span className="chip-count">{count}</span>
-                </button>
-              );
-            })}
-          </div>
-
-          {activeYear !== "ALL" && activeView !== "best" && (
-            // Hide month chips while BEST is open to reinforce year-only BEST scope.
-            <div className="run-summary-month-chips">
-              {MONTHS.map((monthName, index) => ({
-                monthName,
-                month: index + 1,
-              })).map(({ monthName, month }) => {
-                const isMonthSelected = activeMonth === month;
-                const monthCount = monthCounts[month] || 0;
-                const isMonthDisabled = monthCount === 0;
+          {activeView !== "trends" && (
+            <div className="run-summary-year-chips">
+              {yearTabs.map((yearTab) => {
+                const isSelected = yearTab === activeYear;
+                const yearKey = String(yearTab);
+                const count = yearCounts[yearKey] || 0;
 
                 return (
                   <button
-                    key={`${activeYear}-${monthName}`}
-                    ref={isMonthSelected ? activeMonthChipRef : undefined}
+                    key={yearKey}
                     type="button"
-                    disabled={isMonthDisabled}
-                    className={`run-summary-chip month-chip ${isMonthSelected ? "active" : ""} ${isMonthDisabled ? "disabled" : ""}`}
-                    onClick={() => onMonthChange(month)}
+                    className={`run-summary-chip ${isSelected ? "active" : ""}`}
+                    onClick={() => onYearChange(yearTab)}
                   >
-                    {monthName} <span className="chip-count">{monthCount}</span>
+                    {yearTab} <span className="chip-count">{count}</span>
                   </button>
                 );
               })}
             </div>
           )}
+
+          {activeYear !== "ALL" &&
+            activeView !== "best" &&
+            activeView !== "trends" && (
+              // Hide month chips while BEST/TRENDS is open to reinforce their own scope.
+              <div className="run-summary-month-chips">
+                {MONTHS.map((monthName, index) => ({
+                  monthName,
+                  month: index + 1,
+                })).map(({ monthName, month }) => {
+                  const isMonthSelected = activeMonth === month;
+                  const monthCount = monthCounts[month] || 0;
+                  const isMonthDisabled = monthCount === 0;
+
+                  return (
+                    <button
+                      key={`${activeYear}-${monthName}`}
+                      ref={isMonthSelected ? activeMonthChipRef : undefined}
+                      type="button"
+                      disabled={isMonthDisabled}
+                      className={`run-summary-chip month-chip ${isMonthSelected ? "active" : ""} ${isMonthDisabled ? "disabled" : ""}`}
+                      onClick={() => onMonthChange(month)}
+                    >
+                      {monthName}{" "}
+                      <span className="chip-count">{monthCount}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
 
           <div className="run-summary-panel-wrapper">
             {activeView === "calendar" &&
@@ -996,7 +1172,9 @@ export default function RunSummary({
                           )}
                         </span>
                         <span className="run-summary-list-value run-summary-list-value-stack">
-                          <span>{formatMiles(row.bestDistanceMiles)}</span>
+                          <span className="run-summary-list-main-value">
+                            {formatMiles(row.bestDistanceMiles)}
+                          </span>
                           <span className="run-summary-list-subvalue">
                             {formatPace(row.bestDistancePaceSeconds)}
                           </span>
@@ -1068,7 +1246,9 @@ export default function RunSummary({
                           )}
                         </span>
                         <span className="run-summary-list-value run-summary-list-value-stack">
-                          <span>{formatPace(row.bestPaceSeconds)}</span>
+                          <span className="run-summary-list-main-value">
+                            {formatPace(row.bestPaceSeconds)}
+                          </span>
                           <span className="run-summary-list-subvalue">
                             {formatMiles(row.bestPaceDistanceMiles)}
                           </span>
@@ -1083,6 +1263,73 @@ export default function RunSummary({
                     );
                   })}
                 </div>
+              </div>
+            )}
+
+            {activeView === "trends" && (
+              <div className="run-summary-trends-content">
+                <div className="run-summary-trends-controls">
+                  <div
+                    className="run-summary-best-pace-filter"
+                    role="tablist"
+                    aria-label="Trends granularity"
+                  >
+                    {TRENDS_GRANULARITY_OPTIONS.map((option) => (
+                      <button
+                        key={option.key}
+                        type="button"
+                        role="tab"
+                        aria-selected={trendsGranularity === option.key}
+                        className={`run-summary-best-pace-filter-btn ${
+                          trendsGranularity === option.key ? "active" : ""
+                        }`}
+                        onClick={() => setTrendsGranularity(option.key)}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                  <div
+                    className="run-summary-best-pace-filter"
+                    role="tablist"
+                    aria-label="Trends metric"
+                  >
+                    {TRENDS_METRIC_OPTIONS.map((option) => (
+                      <button
+                        key={option.key}
+                        type="button"
+                        role="tab"
+                        aria-selected={trendsMetric === option.key}
+                        className={`run-summary-best-pace-filter-btn ${
+                          trendsMetric === option.key ? "active" : ""
+                        }`}
+                        onClick={() => setTrendsMetric(option.key)}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="run-summary-trends-summary">
+                  <span>
+                    Total:{" "}
+                    <strong>{formatTrendsValue(trendsSummary.total)}</strong>
+                  </span>
+                  <span>
+                    Avg per{" "}
+                    {trendsGranularity === "16week"
+                      ? "week"
+                      : trendsGranularity}
+                    :{" "}
+                    <strong>{formatTrendsValue(trendsSummary.average)}</strong>
+                  </span>
+                </div>
+
+                <TrendsBarChart
+                  buckets={trendsChartBuckets}
+                  formatValue={formatTrendsValue}
+                />
               </div>
             )}
 

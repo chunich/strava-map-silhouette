@@ -807,6 +807,7 @@ a {
 .chip-count {
   opacity: 0.85;
   font-size: 0.9em;
+  color: #3b82f6;
 }
 
 .run-summary-chip.active .chip-count {
@@ -1085,6 +1086,106 @@ a {
   color: #ffffff;
 }
 
+.run-summary-trends-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.run-summary-trends-controls {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: space-between;
+}
+
+.run-summary-trends-summary {
+  color: #b9c8dc;
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 0.85rem;
+  gap: 1.25rem;
+}
+
+.run-summary-trends-summary strong {
+  font-size: 0.95rem;
+  color: #3b82f6;
+}
+
+.trends-bar-chart {
+  height: auto;
+  width: 100%;
+}
+
+.trends-bar-chart-empty {
+  color: #8fa3bf;
+  font-size: 0.85rem;
+  padding: 2rem 0;
+  text-align: center;
+}
+
+.trends-bar-chart-axis,
+.trends-bar-chart-gridline {
+  stroke: #2a394f;
+  stroke-width: 1;
+}
+
+.trends-bar-chart-gridline {
+  stroke-dasharray: 2 4;
+}
+
+.trends-bar-chart-axis-label {
+  fill: #c7d4e6;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.trends-bar-chart-bar {
+  fill: #3b82f6;
+}
+
+.trends-bar-chart-bar.hover {
+  fill: #60a5fa;
+}
+
+.trends-bar-chart-trend-line {
+  stroke: #f59e0b;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  pointer-events: none;
+  opacity: 0.9;
+}
+
+.trends-bar-chart-hover-line {
+  pointer-events: none;
+  stroke: #e4eaf4;
+  stroke-dasharray: 3 3;
+  stroke-width: 1;
+}
+
+.trends-bar-chart-tooltip-bg {
+  fill: #0d1319;
+  pointer-events: none;
+  stroke: #263244;
+  stroke-width: 1;
+}
+
+.trends-bar-chart-tooltip-text {
+  fill: #f1f5fb;
+  font-size: 15px;
+  font-weight: 700;
+  pointer-events: none;
+}
+
+.trends-bar-chart-tooltip-value {
+  fill: #60a5fa;
+  font-size: 19px;
+  font-weight: 700;
+  pointer-events: none;
+}
+
 .run-summary-list-total {
   align-items: center;
   background: #1a2432;
@@ -1143,6 +1244,12 @@ a {
   gap: 0.06rem;
 }
 
+.run-summary-list-main-value {
+  color: #3b82f6;
+  font-size: 0.84rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
 .run-summary-list-subvalue {
   color: #8fa3bf;
   font-size: 0.68rem;
@@ -1248,6 +1355,7 @@ a {
 }
 
 .run-summary-list-content .run-summary-list-date-value .run-summary-list-value {
+  color: #3b82f6;
   font-size: 1rem;
 }
 
