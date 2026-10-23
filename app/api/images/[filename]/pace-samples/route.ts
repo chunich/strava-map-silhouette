@@ -193,59 +193,82 @@ export async function GET(
 
     const stem = filename.replace(/\.(svg|png|json)$/i, "");
 
-    let sourceEntries: string[];
-    try {
-      sourceEntries = await readdir(config.paths.sourceDir);
-    } catch {
-      return NextResponse.json(
-        { error: "Source directory not found", path: config.paths.sourceDir },
-        { status: 400 },
-      );
-    }
-
-    let matchedSourcePath: string | null = null;
-    for (const entry of sourceEntries) {
-      const ext = path.extname(entry).toLowerCase();
-      if (!ALLOWED_EXTENSIONS.has(ext)) continue;
-      const baseName = path.basename(entry, ext);
-      if (stem.endsWith("_" + baseName)) {
-        matchedSourcePath = path.join(config.paths.sourceDir, entry);
-        break;
-      }
-    }
-
-    if (!matchedSourcePath) {
-      return NextResponse.json(
-        {
-          error: "Source file not found",
-          filename,
-          hint: "No matching .gpx/.tcx/.fit file for this run",
-        },
-        { status: 404 },
-      );
-    }
-
-    const ext = path.extname(matchedSourcePath).toLowerCase();
     let distanceTimeSamples: DistanceTimeSample[] | undefined;
 
-    if (ext === ".fit") {
-      const buffer = await readFile(matchedSourcePath);
-      const activity = (await parseFIT(buffer)) as {
-        distanceTimeSamples?: DistanceTimeSample[];
-      };
-      distanceTimeSamples = activity.distanceTimeSamples;
-    } else if (ext === ".tcx") {
-      const content = await readFile(matchedSourcePath, "utf-8");
-      const activity = parseTCX(content) as {
-        distanceTimeSamples?: DistanceTimeSample[];
-      };
-      distanceTimeSamples = activity.distanceTimeSamples;
-    } else if (ext === ".gpx") {
-      const content = await readFile(matchedSourcePath, "utf-8");
-      const activity = parseGPX(content) as {
-        distanceTimeSamples?: DistanceTimeSample[];
-      };
-      distanceTimeSamples = activity.distanceTimeSamples;
+    // Prefer the precomputed samples sidecar written alongside the output
+    // image at generation time. This is what's actually deployed (output_files
+    // is committed to git), whereas source_files is gitignored and only
+    // exists in local dev, so this is the only path that works in prod.
+    const precomputedPath = path.join(
+      config.paths.outputDir,
+      `${stem}.samples.json`,
+    );
+    try {
+      const precomputedContent = await readFile(precomputedPath, "utf-8");
+      distanceTimeSamples = JSON.parse(
+        precomputedContent,
+      ) as DistanceTimeSample[];
+    } catch {
+      // Fall through to parsing the raw source file (local dev only).
+    }
+
+    if (!distanceTimeSamples) {
+      let sourceEntries: string[];
+      try {
+        sourceEntries = await readdir(config.paths.sourceDir);
+      } catch {
+        return NextResponse.json(
+          {
+            error: "Source directory not found",
+            path: config.paths.sourceDir,
+          },
+          { status: 400 },
+        );
+      }
+
+      let matchedSourcePath: string | null = null;
+      for (const entry of sourceEntries) {
+        const ext = path.extname(entry).toLowerCase();
+        if (!ALLOWED_EXTENSIONS.has(ext)) continue;
+        const baseName = path.basename(entry, ext);
+        if (stem.endsWith("_" + baseName)) {
+          matchedSourcePath = path.join(config.paths.sourceDir, entry);
+          break;
+        }
+      }
+
+      if (!matchedSourcePath) {
+        return NextResponse.json(
+          {
+            error: "Source file not found",
+            filename,
+            hint: "No matching .gpx/.tcx/.fit file for this run",
+          },
+          { status: 404 },
+        );
+      }
+
+      const ext = path.extname(matchedSourcePath).toLowerCase();
+
+      if (ext === ".fit") {
+        const buffer = await readFile(matchedSourcePath);
+        const activity = (await parseFIT(buffer)) as {
+          distanceTimeSamples?: DistanceTimeSample[];
+        };
+        distanceTimeSamples = activity.distanceTimeSamples;
+      } else if (ext === ".tcx") {
+        const content = await readFile(matchedSourcePath, "utf-8");
+        const activity = parseTCX(content) as {
+          distanceTimeSamples?: DistanceTimeSample[];
+        };
+        distanceTimeSamples = activity.distanceTimeSamples;
+      } else if (ext === ".gpx") {
+        const content = await readFile(matchedSourcePath, "utf-8");
+        const activity = parseGPX(content) as {
+          distanceTimeSamples?: DistanceTimeSample[];
+        };
+        distanceTimeSamples = activity.distanceTimeSamples;
+      }
     }
 
     if (!distanceTimeSamples || distanceTimeSamples.length < 2) {

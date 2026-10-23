@@ -192,6 +192,20 @@ async function processFileActivities(gpxPaths, outputDir, options = {}) {
         JSON.stringify(metadata, null, 2),
         "utf-8",
       );
+
+      // Also persist the raw distance/time samples alongside the output, so
+      // the deployed app (which only ships output_files, not the gitignored
+      // source_files directory) can still chart per-run pace without access
+      // to the original GPX/TCX/FIT file.
+      if (activity.distanceTimeSamples?.length) {
+        const samplesPath = outputPath.replace(".svg", ".samples.json");
+        await fs.writeFile(
+          samplesPath,
+          JSON.stringify(activity.distanceTimeSamples),
+          "utf-8",
+        );
+      }
+
       console.log(`  ✓ Saved to: ${outputPath}`);
 
       // Record success
