@@ -17,6 +17,7 @@ import { isRunningActivity } from "@/lib/activity-format";
 import type { StatusTone } from "@/lib/api-types";
 import { useHealthStatus } from "@/hooks/useHealthStatus";
 import { useImageList } from "@/hooks/useImageList";
+import { usePersistentState } from "@/hooks/usePersistentState";
 import { useStravaActivities } from "@/hooks/useStravaActivities";
 
 type StatusState = {
@@ -28,6 +29,25 @@ type StatusState = {
 type OpenSection = "activities" | null;
 type YearTab = "ALL" | number;
 type MonthTab = "ALL" | number;
+
+const VALID_SUMMARY_VIEWS: SummaryView[] = [
+  "calendar",
+  "gallery",
+  "best",
+  "trends",
+  "runs",
+];
+
+function isSummaryView(value: unknown): value is SummaryView {
+  return (
+    typeof value === "string" &&
+    VALID_SUMMARY_VIEWS.includes(value as SummaryView)
+  );
+}
+
+function isPositiveNumber(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value) && value > 0;
+}
 
 // Read directly rather than importing config.js, which pulls in Node-only
 // deps (@tmcw/togeojson, dotenv) that shouldn't ship in the client bundle.
@@ -97,7 +117,11 @@ export default function DashboardApp() {
   const [activitiesError, setActivitiesError] = useState<string | null>(null);
   const [hideFilenames, setHideFilenames] = useState(true);
   const [showImageOverlay, setShowImageOverlay] = useState(true);
-  const [imageColumns, setImageColumns] = useState(3);
+  const [imageColumns, setImageColumns] = usePersistentState(
+    "runner-tracker:imageColumns",
+    3,
+    isPositiveNumber,
+  );
   const [gallerySortDirection, setGallerySortDirection] = useState<
     "asc" | "desc"
   >("desc");
@@ -106,7 +130,11 @@ export default function DashboardApp() {
   );
   const [showRunningOnly, setShowRunningOnly] = useState(false);
   const [openSection, setOpenSection] = useState<OpenSection>(null);
-  const [activeView, setActiveView] = useState<SummaryView>("calendar");
+  const [activeView, setActiveView] = usePersistentState<SummaryView>(
+    "runner-tracker:activeView",
+    "calendar",
+    isSummaryView,
+  );
   const [activeYear, setActiveYear] = useState<YearTab>(() =>
     new Date().getFullYear(),
   );
@@ -114,6 +142,7 @@ export default function DashboardApp() {
     () => new Date().getMonth() + 1,
   );
   const didInitDateScope = useRef(false);
+
   const dismissStatus = useCallback(() => {
     setStatus(null);
   }, []);
