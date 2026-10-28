@@ -193,7 +193,7 @@ export default function DashboardApp() {
         tone: response.summary.successful > 0 ? "success" : "error",
         message: `Processed ${response.summary.successful} of ${response.summary.total} file(s).${response.summary.failed ? ` ${response.summary.failed} failed.` : ""}`,
       });
-      await refreshImages();
+      await refreshImages({ switchView: false });
     },
     [refreshImages],
   );
@@ -336,7 +336,7 @@ export default function DashboardApp() {
         loadingAction={loadingAction}
         writeActionsEnabled={WRITE_ACTIONS_ENABLED}
         onRefresh={() => {
-          void refreshImages();
+          void refreshImages({ switchView: false });
         }}
         onRefreshMetadata={() => {
           void runRefreshMetadata();
