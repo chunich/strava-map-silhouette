@@ -9,6 +9,7 @@ const {
   getDistanceCategory,
 } = require("./distanceCategories");
 const { generateSvg } = require("./generateSvg");
+const { syncRunToSupabase } = require("./supabaseSync");
 
 function getActivityType(activity) {
   return activity.type || "Unknown";
@@ -203,6 +204,37 @@ async function processFileActivities(gpxPaths, outputDir, options = {}) {
           samplesPath,
           JSON.stringify(activity.distanceTimeSamples),
           "utf-8",
+        );
+      }
+
+      // Dual-write to Supabase (DB + Storage) when configured. This is a
+      // no-op locally until a Supabase project/env vars are set up; errors
+      // are logged but don't fail the local file-based processing, since the
+      // filesystem output remains the source of truth until the migration
+      // is verified.
+      try {
+        const synced = await syncRunToSupabase({
+          filename,
+          activityType,
+          activityDate: activity.time
+            ? new Date(activity.time).toISOString().slice(0, 10)
+            : null,
+          titleLabel,
+          metrics: activity.metrics,
+          svgContent,
+          rawFileContent: Buffer.isBuffer(fileContent)
+            ? fileContent
+            : Buffer.from(fileContent, "utf-8"),
+          rawFileExt: fileExt,
+          distanceTimeSamples: activity.distanceTimeSamples || [],
+          points: polyline,
+        });
+        if (synced && verbose) {
+          console.log(`  ✓ Synced to Supabase: ${filename}`);
+        }
+      } catch (syncError) {
+        console.warn(
+          `  ⚠ Supabase sync failed for "${filename}": ${syncError.message}`,
         );
       }
 

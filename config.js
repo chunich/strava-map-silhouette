@@ -59,6 +59,18 @@ const config = {
       : activityLookupDays,
   },
 
+  // Supabase (Postgres + Storage) configuration. When unset, DB-backed
+  // reads/writes are skipped and the app falls back to the local
+  // output_files/source_files directories.
+  supabase: {
+    url: process.env.SUPABASE_URL || "",
+    serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY || "",
+    buckets: {
+      rawActivities: process.env.SUPABASE_RAW_BUCKET || "raw-activities",
+      runSvgs: process.env.SUPABASE_SVG_BUCKET || "run-svgs",
+    },
+  },
+
   // Feature flags
   features: {
     // Disable filesystem-write routes/UI (upload, generate, stitch,

@@ -2,6 +2,7 @@ import { access, readFile, stat } from "node:fs/promises";
 import path from "node:path";
 import { NextResponse } from "next/server";
 import config from "@/config";
+import { getRunSvg, isSupabaseConfigured } from "@/lib/db/runsRepository";
 
 /**
  * GET /api/images/:filename
@@ -38,6 +39,28 @@ export async function GET(
         },
         { status: 400 },
       );
+    }
+
+    if (lower.endsWith(".svg") && isSupabaseConfigured()) {
+      try {
+        const svgBuffer = await getRunSvg(filename);
+        if (svgBuffer) {
+          return new NextResponse(new Uint8Array(svgBuffer), {
+            status: 200,
+            headers: {
+              "Content-Type": "image/svg+xml",
+              "Content-Disposition": `inline; filename="${filename}"`,
+              "Cache-Control": "no-cache",
+              "X-Data-Source": "supabase",
+            },
+          });
+        }
+      } catch (dbError) {
+        console.warn(
+          `[GET /api/images/${filename}] Supabase read failed, falling back to filesystem:`,
+          dbError,
+        );
+      }
     }
 
     // Check if SVG or PNG file exists in output directory
@@ -79,6 +102,7 @@ export async function GET(
       "Last-Modified": lastModified,
       // no-cache: revalidate on every request, but allow 304 shortcut
       "Cache-Control": "no-cache",
+      "X-Data-Source": "filesystem",
     };
 
     // PNG files are served directly as binary

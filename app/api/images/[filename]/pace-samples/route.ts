@@ -6,6 +6,7 @@ import { parseTCX } from "@/src/tcxParser";
 import { parseGPX } from "@/src/gpxParser";
 import { parseFIT } from "@/src/fitParser";
 import { BEST_EFFORT_DISTANCES, findBestEffortWindow } from "@/src/bestEffort";
+import { getRunSamples, isSupabaseConfigured } from "@/lib/db/runsRepository";
 
 const ALLOWED_EXTENSIONS = new Set([".gpx", ".tcx", ".fit"]);
 
@@ -194,6 +195,23 @@ export async function GET(
     const stem = filename.replace(/\.(svg|png|json)$/i, "");
 
     let distanceTimeSamples: DistanceTimeSample[] | undefined;
+    let dataSource: "supabase" | "filesystem" = "filesystem";
+
+    // Prefer Supabase-backed samples when configured.
+    if (isSupabaseConfigured()) {
+      try {
+        const dbSamples = await getRunSamples(`${stem}.svg`);
+        if (dbSamples) {
+          distanceTimeSamples = dbSamples;
+          dataSource = "supabase";
+        }
+      } catch (dbError) {
+        console.warn(
+          `[GET pace-samples] Supabase read failed, falling back to filesystem:`,
+          dbError,
+        );
+      }
+    }
 
     // Prefer the precomputed samples sidecar written alongside the output
     // image at generation time. This is what's actually deployed (output_files
@@ -203,13 +221,15 @@ export async function GET(
       config.paths.outputDir,
       `${stem}.samples.json`,
     );
-    try {
-      const precomputedContent = await readFile(precomputedPath, "utf-8");
-      distanceTimeSamples = JSON.parse(
-        precomputedContent,
-      ) as DistanceTimeSample[];
-    } catch {
-      // Fall through to parsing the raw source file (local dev only).
+    if (!distanceTimeSamples) {
+      try {
+        const precomputedContent = await readFile(precomputedPath, "utf-8");
+        distanceTimeSamples = JSON.parse(
+          precomputedContent,
+        ) as DistanceTimeSample[];
+      } catch {
+        // Fall through to parsing the raw source file (local dev only).
+      }
     }
 
     if (!distanceTimeSamples) {
@@ -300,7 +320,10 @@ export async function GET(
       maxChartPoints,
     );
 
-    return NextResponse.json({ points, bestWindows });
+    return NextResponse.json(
+      { points, bestWindows },
+      { headers: { "X-Data-Source": dataSource } },
+    );
   } catch (error) {
     console.error(
       `[GET /api/images/${filename}/pace-samples] Error:`,

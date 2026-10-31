@@ -3,6 +3,7 @@ import path from "node:path";
 import { NextResponse } from "next/server";
 import config from "@/config";
 import type { ImageMetadata } from "@/lib/api-types";
+import { isSupabaseConfigured, listRuns } from "@/lib/db/runsRepository";
 
 function parseMetadata(content: string): ImageMetadata {
   const parsed = JSON.parse(content) as Record<string, unknown>;
@@ -96,6 +97,21 @@ export async function GET() {
   try {
     console.log("[GET /api/images] Requested");
 
+    if (isSupabaseConfigured()) {
+      try {
+        const images = await listRuns();
+        return NextResponse.json(
+          { images },
+          { headers: { "X-Data-Source": "supabase" } },
+        );
+      } catch (dbError) {
+        console.warn(
+          "[GET /api/images] Supabase read failed, falling back to filesystem:",
+          dbError,
+        );
+      }
+    }
+
     try {
       await access(config.paths.outputDir);
     } catch {
@@ -143,9 +159,10 @@ export async function GET() {
       }),
     );
 
-    return NextResponse.json({
-      images,
-    });
+    return NextResponse.json(
+      { images },
+      { headers: { "X-Data-Source": "filesystem" } },
+    );
   } catch (error) {
     console.error("[GET /api/images] Error:", error);
 
