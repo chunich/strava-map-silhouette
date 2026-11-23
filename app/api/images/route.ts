@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import config from "@/config";
 import type { ImageMetadata } from "@/lib/api-types";
 import { isSupabaseConfigured, listRuns } from "@/lib/db/runsRepository";
+import { computeEtag, etagMatches } from "@/lib/http/etag";
 
 function parseMetadata(content: string): ImageMetadata {
   const parsed = JSON.parse(content) as Record<string, unknown>;
@@ -93,17 +94,33 @@ function parseMetadata(content: string): ImageMetadata {
  * List all SVG images in the output directory in ordinary alphabetical order
  * Exclude stitched_*.svg files which are intermediate files used for stitching
  */
-export async function GET() {
+export async function GET(req: Request) {
   try {
     console.log("[GET /api/images] Requested");
 
     if (isSupabaseConfigured()) {
       try {
         const images = await listRuns();
-        return NextResponse.json(
-          { images },
-          { headers: { "X-Data-Source": "supabase" } },
-        );
+        const body = JSON.stringify({ images });
+        const etag = computeEtag(body);
+        if (etagMatches(req, etag)) {
+          return new NextResponse(null, {
+            status: 304,
+            headers: {
+              ETag: etag,
+              "Cache-Control": "no-cache",
+              "X-Data-Source": "supabase",
+            },
+          });
+        }
+        return new NextResponse(body, {
+          headers: {
+            "Content-Type": "application/json",
+            ETag: etag,
+            "Cache-Control": "no-cache",
+            "X-Data-Source": "supabase",
+          },
+        });
       } catch (dbError) {
         console.warn(
           "[GET /api/images] Supabase read failed, falling back to filesystem:",
@@ -159,10 +176,26 @@ export async function GET() {
       }),
     );
 
-    return NextResponse.json(
-      { images },
-      { headers: { "X-Data-Source": "filesystem" } },
-    );
+    const body = JSON.stringify({ images });
+    const etag = computeEtag(body);
+    if (etagMatches(req, etag)) {
+      return new NextResponse(null, {
+        status: 304,
+        headers: {
+          ETag: etag,
+          "Cache-Control": "no-cache",
+          "X-Data-Source": "filesystem",
+        },
+      });
+    }
+    return new NextResponse(body, {
+      headers: {
+        "Content-Type": "application/json",
+        ETag: etag,
+        "Cache-Control": "no-cache",
+        "X-Data-Source": "filesystem",
+      },
+    });
   } catch (error) {
     console.error("[GET /api/images] Error:", error);
 

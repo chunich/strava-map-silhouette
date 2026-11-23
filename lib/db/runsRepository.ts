@@ -119,7 +119,14 @@ export async function getRunSamples(
   return data ? (data.distance_time_samples as DistanceTimeSample[]) : null;
 }
 
-export async function getRunSvg(filename: string): Promise<Buffer | null> {
+export interface RunSvgResult {
+  buffer: Buffer;
+  updatedAt: string | null;
+}
+
+export async function getRunSvg(
+  filename: string,
+): Promise<RunSvgResult | null> {
   const client = getSupabaseClient();
   if (!client) {
     return null;
@@ -127,7 +134,7 @@ export async function getRunSvg(filename: string): Promise<Buffer | null> {
 
   const { data: run, error: runError } = await client
     .from("runs")
-    .select("svg_storage_path")
+    .select("svg_storage_path, updated_at")
     .eq("source_filename", filename)
     .maybeSingle();
 
@@ -146,7 +153,10 @@ export async function getRunSvg(filename: string): Promise<Buffer | null> {
     throw new Error(`Failed to download SVG from storage: ${error.message}`);
   }
 
-  return Buffer.from(await data.arrayBuffer());
+  return {
+    buffer: Buffer.from(await data.arrayBuffer()),
+    updatedAt: run.updated_at ?? null,
+  };
 }
 
 export interface UpsertRunInput {

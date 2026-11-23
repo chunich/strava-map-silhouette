@@ -3,6 +3,7 @@ import path from "node:path";
 import { NextResponse } from "next/server";
 import config from "@/config";
 import { getRunSvg, isSupabaseConfigured } from "@/lib/db/runsRepository";
+import { computeEtag, etagMatches } from "@/lib/http/etag";
 
 /**
  * GET /api/images/:filename
@@ -43,13 +44,33 @@ export async function GET(
 
     if (lower.endsWith(".svg") && isSupabaseConfigured()) {
       try {
-        const svgBuffer = await getRunSvg(filename);
-        if (svgBuffer) {
+        const svgResult = await getRunSvg(filename);
+        if (svgResult) {
+          const { buffer: svgBuffer, updatedAt } = svgResult;
+          const etag = computeEtag(svgBuffer);
+          const lastModified = updatedAt
+            ? new Date(updatedAt).toUTCString()
+            : undefined;
+
+          if (etagMatches(req, etag)) {
+            return new NextResponse(null, {
+              status: 304,
+              headers: {
+                ETag: etag,
+                ...(lastModified ? { "Last-Modified": lastModified } : {}),
+                "Cache-Control": "no-cache",
+                "X-Data-Source": "supabase",
+              },
+            });
+          }
+
           return new NextResponse(new Uint8Array(svgBuffer), {
             status: 200,
             headers: {
               "Content-Type": "image/svg+xml",
               "Content-Disposition": `inline; filename="${filename}"`,
+              ETag: etag,
+              ...(lastModified ? { "Last-Modified": lastModified } : {}),
               "Cache-Control": "no-cache",
               "X-Data-Source": "supabase",
             },

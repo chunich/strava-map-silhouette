@@ -7,6 +7,7 @@ import { parseGPX } from "@/src/gpxParser";
 import { parseFIT } from "@/src/fitParser";
 import { BEST_EFFORT_DISTANCES, findBestEffortWindow } from "@/src/bestEffort";
 import { getRunSamples, isSupabaseConfigured } from "@/lib/db/runsRepository";
+import { computeEtag, etagMatches } from "@/lib/http/etag";
 
 const ALLOWED_EXTENSIONS = new Set([".gpx", ".tcx", ".fit"]);
 
@@ -320,10 +321,27 @@ export async function GET(
       maxChartPoints,
     );
 
-    return NextResponse.json(
-      { points, bestWindows },
-      { headers: { "X-Data-Source": dataSource } },
-    );
+    const body = JSON.stringify({ points, bestWindows });
+    const etag = computeEtag(body);
+    if (etagMatches(req, etag)) {
+      return new NextResponse(null, {
+        status: 304,
+        headers: {
+          ETag: etag,
+          "Cache-Control": "no-cache",
+          "X-Data-Source": dataSource,
+        },
+      });
+    }
+
+    return new NextResponse(body, {
+      headers: {
+        "Content-Type": "application/json",
+        ETag: etag,
+        "Cache-Control": "no-cache",
+        "X-Data-Source": dataSource,
+      },
+    });
   } catch (error) {
     console.error(
       `[GET /api/images/${filename}/pace-samples] Error:`,
