@@ -43,3 +43,6 @@ next-env.d.ts
 # source directory (if you want to ignore it)
 /source_files
 /test_files
+
+# generated run data (now stored in Supabase; local files are a working cache)
+/output_files

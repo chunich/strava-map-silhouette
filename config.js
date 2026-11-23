@@ -62,9 +62,18 @@ const config = {
   // Supabase (Postgres + Storage) configuration. When unset, DB-backed
   // reads/writes are skipped and the app falls back to the local
   // output_files/source_files directories.
+  //
+  // Supabase is deprecating the legacy `anon`/`service_role` API keys in
+  // favor of `publishable`/`secret` keys. We only ever use the server-only,
+  // full-access key (service_role -> secret), so prefer SUPABASE_SECRET_KEY
+  // (new sb_secret_xxx format) and fall back to the legacy
+  // SUPABASE_SERVICE_ROLE_KEY name for projects that haven't rotated yet.
   supabase: {
     url: process.env.SUPABASE_URL || "",
-    serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY || "",
+    serviceRoleKey:
+      process.env.SUPABASE_SECRET_KEY ||
+      process.env.SUPABASE_SERVICE_ROLE_KEY ||
+      "",
     buckets: {
       rawActivities: process.env.SUPABASE_RAW_BUCKET || "raw-activities",
       runSvgs: process.env.SUPABASE_SVG_BUCKET || "run-svgs",

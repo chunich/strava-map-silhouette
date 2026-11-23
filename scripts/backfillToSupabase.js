@@ -4,7 +4,7 @@
  * (plus re-parsed polyline + raw source file from source_files/) into
  * Supabase. Run locally (source_files/ is gitignored and only exists
  * locally) after creating a Supabase project, running supabase/schema.sql,
- * and setting SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY in .env.
+ * and setting SUPABASE_URL / SUPABASE_SECRET_KEY in .env.
  *
  * Usage: node scripts/backfillToSupabase.js
  */
@@ -71,7 +71,7 @@ async function extractPolyline(sourcePath) {
 async function main() {
   if (!isSupabaseConfigured()) {
     console.error(
-      "Supabase is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in .env first.",
+      "Supabase is not configured. Set SUPABASE_URL and SUPABASE_SECRET_KEY in .env first.",
     );
     process.exit(1);
   }
