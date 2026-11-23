@@ -1,5 +1,5 @@
 const togeojson = require("@tmcw/togeojson");
-const { DOMParser } = require("xmldom");
+const { DOMParser } = require("@xmldom/xmldom");
 
 /**
  * Convert activity data (with raw GPX XML) to GeoJSON using @tmcw/togeojson
